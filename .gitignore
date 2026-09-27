@@ -1,0 +1,11 @@
+# Reference and foreign clones
+caelestia-repo/
+
+# Runtime and temporary caches
+/tmp/
+*.log
+*.tmp
+.cache/
+
+# Local state
+screenshots/
