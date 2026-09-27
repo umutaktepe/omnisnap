@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SHELL_FILE="$PROJECT_DIR/shell.qml"
+APP_NAME="Omnisnap"
+
+_help() {
+    cat <<EOF
+$APP_NAME - Modern Screenshot Tool for KDE Plasma 6
+Usage:
+  omnisnap [command]
+
+Commands:
+  region, -r, --region     Interactive region screenshot (default)
+  full, -f, --full         Instant full-screen screenshot
+  edit, -e, --edit         Region capture with annotation (Swappy)
+  ocr, -o, --ocr           Region capture with OCR text recognition
+  search, -s, --search     Region capture with Google Lens search
+  daemon, -d, --daemon     Start background daemon for instant response
+  stop, -k, --stop         Stop running background daemon
+  status                   Check if background daemon is running
+  -h, --help               Show this help message
+EOF
+}
+
+_is_running() {
+    pgrep -f "quickshell.*$PROJECT_DIR" >/dev/null 2>&1 || pgrep -f "quickshell.*$SHELL_FILE" >/dev/null 2>&1
+}
+
+_call_ipc() {
+    local action="$1"
+    qs -p "$PROJECT_DIR" ipc call region "$action"
+}
+
+_launch_oneshot() {
+    local action="$1"
+    OMNISNAP_INITIAL_ACTION="$action" exec quickshell -p "$PROJECT_DIR"
+}
+
+ACTION="${1:-region}"
+
+case "$ACTION" in
+    region|-r|--region)
+        if _is_running; then
+            _call_ipc "screenshot"
+        else
+            _launch_oneshot "screenshot"
+        fi
+        ;;
+    full|-f|--full)
+        if _is_running; then
+            _call_ipc "fullscreen"
+        else
+            _launch_oneshot "fullscreen"
+        fi
+        ;;
+    edit|-e|--edit)
+        if _is_running; then
+            _call_ipc "edit"
+        else
+            _launch_oneshot "edit"
+        fi
+        ;;
+    ocr|-o|--ocr)
+        if _is_running; then
+            _call_ipc "ocr"
+        else
+            _launch_oneshot "ocr"
+        fi
+        ;;
+    search|-s|--search)
+        if _is_running; then
+            _call_ipc "search"
+        else
+            _launch_oneshot "search"
+        fi
+        ;;
+    daemon|-d|--daemon)
+        if _is_running; then
+            echo "$APP_NAME daemon is already running."
+        else
+            echo "Starting $APP_NAME daemon..."
+            exec quickshell -p "$PROJECT_DIR" &
+        fi
+        ;;
+    stop|-k|--stop)
+        if _is_running; then
+            pkill -f "quickshell.*$PROJECT_DIR" >/dev/null 2>&1 || pkill -f "quickshell.*$SHELL_FILE" >/dev/null 2>&1 || true
+            echo "$APP_NAME daemon stopped."
+        else
+            echo "$APP_NAME is not running."
+        fi
+        ;;
+    status)
+        if _is_running; then
+            echo "$APP_NAME daemon is running."
+            exit 0
+        else
+            echo "$APP_NAME daemon is NOT running."
+            exit 1
+        fi
+        ;;
+    -h|--help|help)
+        _help
+        exit 0
+        ;;
+    *)
+        echo "Error: Unknown argument '$ACTION'" >&2
+        _help >&2
+        exit 2
+        ;;
+esac
