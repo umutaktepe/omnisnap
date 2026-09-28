@@ -29,8 +29,9 @@ QtObject {
         const cleanup = `rm -f '${escapeShellStr(screenshotPath)}'`;
 
         const targetDir = saveDir === "" ? "~/Pictures/Screenshots" : saveDir;
+        const effectiveAction = (action !== undefined && action !== null) ? action : ScreenshotAction.SnipAction.Copy;
 
-        switch (action) {
+        switch (effectiveAction) {
             case ScreenshotAction.SnipAction.Copy: {
                 return `set -euo pipefail; ` +
                     `SAVE_DIR='${escapeShellStr(targetDir)}'; ` +

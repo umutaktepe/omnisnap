@@ -78,7 +78,9 @@ PanelWindow {
             rh = root.screen.height;
         }
 
-        let finalAction = root.action;
+        let finalAction = (root.action !== undefined && root.action !== null)
+            ? root.action
+            : ScreenshotAction.SnipAction.Copy;
         if (root.mouseButton === Qt.RightButton && finalAction === ScreenshotAction.SnipAction.Copy) {
             finalAction = ScreenshotAction.SnipAction.Edit;
         }
@@ -172,6 +174,7 @@ PanelWindow {
 
     // Bottom toolbar
     OptionsToolbar {
+        id: optionsToolbar
         z: 100
         anchors {
             horizontalCenter: parent.horizontalCenter
@@ -179,7 +182,11 @@ PanelWindow {
             bottomMargin: 16
         }
         action: root.action
-        onActionChanged: newAction => root.action = newAction
+        onActionChanged: {
+            if (optionsToolbar.action !== undefined && root.action !== optionsToolbar.action) {
+                root.action = optionsToolbar.action;
+            }
+        }
         onDismiss: root.dismiss()
         onFullScreenRequested: {
             root.snip(true);
