@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/omnisnap"
+STATE_FILE="$RUNTIME_DIR/stolen-screen-edges.json"
+
+_log() {
+    echo "[omnisnap-edges] $*" >&2
+}
+
+_reconfigure_kwin() {
+    if [[ "${OMNISNAP_TEST_MODE:-0}" == "1" ]]; then
+        return 0
+    fi
+    # Reconfigure KWin and the overview effect
+    gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure >/dev/null 2>&1 || true
+    gdbus call --session --dest org.kde.KWin --object-path /Effects --method org.kde.kwin.Effects.reconfigureEffect overview >/dev/null 2>&1 || true
+}
+
+_read_entry() {
+    local group="$1" key="$2"
+    if command -v kreadconfig6 >/dev/null 2>&1; then
+        kreadconfig6 --file kwinrc --group "$group" --key "$key" 2>/dev/null || true
+    else
+        echo ""
+    fi
+}
+
+_write_entry() {
+    local group="$1" key="$2" value="$3"
+    if [[ "${OMNISNAP_TEST_MODE:-0}" == "1" ]]; then
+        return 0
+    fi
+    if command -v kwriteconfig6 >/dev/null 2>&1; then
+        if [[ -z "$value" || "$value" == "__DELETE__" ]]; then
+            kwriteconfig6 --file kwinrc --group "$group" --key "$key" --delete 2>/dev/null || true
+        else
+            kwriteconfig6 --file kwinrc --group "$group" --key "$key" "$value" 2>/dev/null || true
+        fi
+    fi
+}
+
+cmd_inhibit() {
+    mkdir -p "$RUNTIME_DIR"
+    if [[ -f "$STATE_FILE" ]]; then
+        # Already inhibited, do not overwrite original state
+        return 0
+    fi
+
+    local overview_border
+    overview_border="$(_read_entry "Effect-overview" "BorderActivate")"
+
+    local top_left top_right bottom_left bottom_right
+    top_left="$(_read_entry "ElectricBorders" "TopLeft")"
+    top_right="$(_read_entry "ElectricBorders" "TopRight")"
+    bottom_left="$(_read_entry "ElectricBorders" "BottomLeft")"
+    bottom_right="$(_read_entry "ElectricBorders" "BottomRight")"
+
+    cat <<EOF > "$STATE_FILE"
+{
+  "Effect-overview": {
+    "BorderActivate": "${overview_border:-__DELETE__}"
+  },
+  "ElectricBorders": {
+    "TopLeft": "${top_left:-__DELETE__}",
+    "TopRight": "${top_right:-__DELETE__}",
+    "BottomLeft": "${bottom_left:-__DELETE__}",
+    "BottomRight": "${bottom_right:-__DELETE__}"
+  }
+}
+EOF
+
+    # Set overview corner to 9 (ElectricNone) and ElectricBorders to None
+    _write_entry "Effect-overview" "BorderActivate" "9"
+    _write_entry "ElectricBorders" "TopLeft" "None"
+    _write_entry "ElectricBorders" "TopRight" "None"
+    _write_entry "ElectricBorders" "BottomLeft" "None"
+    _write_entry "ElectricBorders" "BottomRight" "None"
+
+    _reconfigure_kwin
+}
+
+cmd_restore() {
+    if [[ ! -f "$STATE_FILE" ]]; then
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        local ob tl tr bl br
+        ob="$(jq -r '."Effect-overview"."BorderActivate" // "__DELETE__"' "$STATE_FILE")"
+        tl="$(jq -r '."ElectricBorders"."TopLeft" // "__DELETE__"' "$STATE_FILE")"
+        tr="$(jq -r '."ElectricBorders"."TopRight" // "__DELETE__"' "$STATE_FILE")"
+        bl="$(jq -r '."ElectricBorders"."BottomLeft" // "__DELETE__"' "$STATE_FILE")"
+        br="$(jq -r '."ElectricBorders"."BottomRight" // "__DELETE__"' "$STATE_FILE")"
+
+        _write_entry "Effect-overview" "BorderActivate" "$ob"
+        _write_entry "ElectricBorders" "TopLeft" "$tl"
+        _write_entry "ElectricBorders" "TopRight" "$tr"
+        _write_entry "ElectricBorders" "BottomLeft" "$bl"
+        _write_entry "ElectricBorders" "BottomRight" "$br"
+    fi
+
+    rm -f "$STATE_FILE"
+    _reconfigure_kwin
+}
+
+cmd_recover() {
+    if [[ -f "$STATE_FILE" ]]; then
+        _log "Recovering screen edge settings from previous session..."
+        cmd_restore
+    fi
+}
+
+case "${1:-}" in
+    inhibit)
+        cmd_inhibit
+        ;;
+    restore)
+        cmd_restore
+        ;;
+    recover)
+        cmd_recover
+        ;;
+    -h|--help|help)
+        cat <<EOF
+Usage: omnisnap-edges [inhibit|restore|recover]
+Manage KWin screen edges for Omnisnap screenshot sessions.
+
+Commands:
+  inhibit    Back up current edge bindings, disable them, and reconfigure KWin
+  restore    Restore original edge bindings from backup and reconfigure KWin
+  recover    Restore edge bindings if a backup file exists (crash recovery)
+  -h, --help Show this help message
+EOF
+        ;;
+    *)
+        echo "Error: Unknown action '${1:-}'" >&2
+        exit 1
+        ;;
+esac
