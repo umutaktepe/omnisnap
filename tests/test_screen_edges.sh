@@ -25,6 +25,9 @@ test_state_backup_and_restore() {
     local test_runtime_dir
     test_runtime_dir="$(mktemp -d /tmp/omnisnap-test-runtime-XXXXXX)"
     export XDG_RUNTIME_DIR="$test_runtime_dir"
+    local test_config_dir="$test_runtime_dir/config"
+    mkdir -p "$test_config_dir"
+    export XDG_CONFIG_HOME="$test_config_dir"
     local state_file="$test_runtime_dir/omnisnap/stolen-screen-edges.json"
 
     # Run inhibit

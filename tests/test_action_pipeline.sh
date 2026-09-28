@@ -215,7 +215,7 @@ test_copy_action_async_execution() {
     # Mock notify-send that simulates user deliberation / notification delay
     cat << 'EOF' > "$mock_bin_dir/notify-send"
 #!/bin/bash
-sleep 2
+sleep 0.1
 echo "open"
 EOF
     chmod +x "$mock_bin_dir/notify-send"
@@ -281,14 +281,21 @@ EOF
         exit 1
     fi
 
-    # 4. Verify the script did NOT block waiting for notify-send (notify-send sleeps 2000ms)
-    if [[ "$elapsed_ms" -ge 1500 ]]; then
-        echo "FAIL: Copy pipeline blocked on notify-send! Elapsed: ${elapsed_ms}ms (expected < 1500ms)"
+    # 4. Verify the script did NOT block waiting for notify-send (notify-send sleeps 100ms)
+    if [[ "$elapsed_ms" -ge 80 ]]; then
+        echo "FAIL: Copy pipeline blocked on notify-send! Elapsed: ${elapsed_ms}ms (expected < 80ms)"
         rm -rf "$mock_bin_dir" "$tmp_dir"
         exit 1
     fi
 
-    echo "PASS: Copy action non-blocking notification subshell verified (completed in ${elapsed_ms}ms, notify-send delayed 2000ms)"
+    # Wait for the mock background subshell to finish so it never escapes to host xdg-open
+    local timeout=0
+    while [[ ! -f "$tmp_dir/opened.log" && $timeout -lt 20 ]]; do
+        sleep 0.02
+        timeout=$((timeout + 1))
+    done
+
+    echo "PASS: Copy action non-blocking notification subshell verified (completed in ${elapsed_ms}ms, notify-send delayed 100ms)"
     rm -rf "$mock_bin_dir" "$tmp_dir"
 }
 

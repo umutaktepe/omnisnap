@@ -111,8 +111,11 @@ EOF
 
     local saved_test_mode="${OMNISNAP_TEST_MODE:-}"
     local saved_runtime="${XDG_RUNTIME_DIR:-}"
+    local saved_config="${XDG_CONFIG_HOME:-}"
     export OMNISNAP_TEST_MODE=1
     export XDG_RUNTIME_DIR="$runtime_dir"
+    export XDG_CONFIG_HOME="$test_tmp/config"
+    mkdir -p "$test_tmp/config"
 
     # Ensure no daemon is running that might intercept the command
     pkill -f "quickshell.*$BIN" >/dev/null 2>&1 || true
@@ -129,6 +132,11 @@ EOF
         export XDG_RUNTIME_DIR="$saved_runtime"
     else
         unset XDG_RUNTIME_DIR
+    fi
+    if [[ -n "$saved_config" ]]; then
+        export XDG_CONFIG_HOME="$saved_config"
+    else
+        unset XDG_CONFIG_HOME
     fi
 
     if [[ -f "$state_file" ]]; then

@@ -19,6 +19,10 @@ _reconfigure_kwin() {
 
 _read_entry() {
     local group="$1" key="$2"
+    if [[ "${OMNISNAP_TEST_MODE:-0}" == "1" ]]; then
+        echo ""
+        return 0
+    fi
     if command -v kreadconfig6 >/dev/null 2>&1; then
         kreadconfig6 --file kwinrc --group "$group" --key "$key" 2>/dev/null || true
     else
