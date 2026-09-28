@@ -58,8 +58,92 @@ test_status_when_not_running() {
     echo "PASS: test_status_when_not_running"
 }
 
+test_screen_edge_recovery_on_start() {
+    local test_tmp
+    test_tmp=$(mktemp -d /tmp/omnisnap_test_cli_edge_XXXXXX)
+    local mock_bin="$test_tmp/bin"
+    mkdir -p "$mock_bin"
+
+    local log_file="$test_tmp/edges.log"
+
+    # Mock omnisnap-edges to log arguments
+    cat <<EOF > "$mock_bin/omnisnap-edges"
+#!/usr/bin/env bash
+echo "\$*" >> "$log_file"
+EOF
+    chmod +x "$mock_bin/omnisnap-edges"
+
+    # Mock quickshell to terminate immediately
+    cat <<EOF > "$mock_bin/quickshell"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/quickshell"
+
+    # Test oneshot invocation (e.g., region)
+    PATH="$mock_bin:$PATH" OMNISNAP_PROJECT_DIR="$test_tmp" "$BIN" region >/dev/null 2>&1 || true
+
+    if [[ ! -f "$log_file" ]] || ! grep -q "^recover" "$log_file"; then
+        echo "FAIL: bin/omnisnap did not invoke 'omnisnap-edges recover' on oneshot startup"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    # Reset log file and test daemon invocation
+    rm -f "$log_file"
+    PATH="$mock_bin:$PATH" OMNISNAP_PROJECT_DIR="$test_tmp" "$BIN" daemon >/dev/null 2>&1 || true
+
+    if [[ ! -f "$log_file" ]] || ! grep -q "^recover" "$log_file"; then
+        echo "FAIL: bin/omnisnap did not invoke 'omnisnap-edges recover' on daemon startup"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    # End-to-end crash recovery test with real omnisnap-edges
+    local runtime_dir="$test_tmp/runtime"
+    mkdir -p "$runtime_dir/omnisnap"
+    local state_file="$runtime_dir/omnisnap/stolen-screen-edges.json"
+    cat <<EOF > "$state_file"
+{
+  "Effect-overview": { "BorderActivate": "9" }
+}
+EOF
+
+    local saved_test_mode="${OMNISNAP_TEST_MODE:-}"
+    local saved_runtime="${XDG_RUNTIME_DIR:-}"
+    export OMNISNAP_TEST_MODE=1
+    export XDG_RUNTIME_DIR="$runtime_dir"
+
+    # Ensure no daemon is running that might intercept the command
+    pkill -f "quickshell.*$BIN" >/dev/null 2>&1 || true
+
+    PATH="$mock_bin:$PATH" "$BIN" region >/dev/null 2>&1 || true
+
+    # Restore environment variables
+    if [[ -n "$saved_test_mode" ]]; then
+        export OMNISNAP_TEST_MODE="$saved_test_mode"
+    else
+        unset OMNISNAP_TEST_MODE
+    fi
+    if [[ -n "$saved_runtime" ]]; then
+        export XDG_RUNTIME_DIR="$saved_runtime"
+    else
+        unset XDG_RUNTIME_DIR
+    fi
+
+    if [[ -f "$state_file" ]]; then
+        echo "FAIL: Stale screen edges state file was not cleaned up by recover on omnisnap start"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    rm -rf "$test_tmp"
+    echo "PASS: test_screen_edge_recovery_on_start"
+}
+
 test_executable_bit
 test_help_flag
 test_unknown_action
 test_status_when_not_running
+test_screen_edge_recovery_on_start
 echo "All CLI tests passed."

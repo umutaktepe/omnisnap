@@ -56,6 +56,74 @@ test_bin_symlink() {
     echo "PASS: Binary symlink verified ($symlink -> $resolved_target)"
 }
 
+test_edges_symlink() {
+    echo "Testing omnisnap-edges symlink in BIN_TARGET..."
+    local symlink="$BIN_TARGET/omnisnap-edges"
+
+    if [[ ! -e "$symlink" ]]; then
+        echo "FAIL: $symlink does not exist"
+        exit 1
+    fi
+
+    if [[ ! -L "$symlink" ]]; then
+        echo "FAIL: $symlink is not a symbolic link"
+        exit 1
+    fi
+
+    if [[ ! -x "$symlink" ]]; then
+        echo "FAIL: $symlink is not executable"
+        exit 1
+    fi
+
+    local resolved_target
+    resolved_target="$(readlink -f "$symlink")"
+    local expected_target
+    expected_target="$(readlink -f "$REPO_DIR/bin/omnisnap-edges")"
+
+    if [[ "$resolved_target" != "$expected_target" ]]; then
+        echo "FAIL: Symlink target mismatch: $resolved_target != $expected_target"
+        exit 1
+    fi
+
+    local help_out
+    help_out=$("$symlink" --help)
+    if ! echo "$help_out" | grep -q "recover"; then
+        echo "FAIL: Help output of symlinked omnisnap-edges missing recover command"
+        exit 1
+    fi
+
+    echo "PASS: Screen edges binary symlink verified ($symlink -> $resolved_target)"
+}
+
+test_default_home_install() {
+    echo "Testing default installation path (~/.local/bin)..."
+    local fake_home="$TEST_TMPDIR/fake_home"
+    mkdir -p "$fake_home"
+
+    (
+        unset OMNISNAP_BIN_TARGET
+        unset OMNISNAP_DESKTOP_TARGET
+        HOME="$fake_home" "$REPO_DIR/install.sh" >/dev/null 2>&1
+    )
+
+    local expected_symlink="$fake_home/.local/bin/omnisnap-edges"
+    if [[ ! -L "$expected_symlink" ]]; then
+        echo "FAIL: Default install did not symlink omnisnap-edges to ~/.local/bin/omnisnap-edges"
+        exit 1
+    fi
+
+    local resolved_target
+    resolved_target="$(readlink -f "$expected_symlink")"
+    local expected_target
+    expected_target="$(readlink -f "$REPO_DIR/bin/omnisnap-edges")"
+    if [[ "$resolved_target" != "$expected_target" ]]; then
+        echo "FAIL: Default install symlink target mismatch: $resolved_target != $expected_target"
+        exit 1
+    fi
+
+    echo "PASS: Default install to ~/.local/bin/omnisnap-edges verified"
+}
+
 test_desktop_entry() {
     echo "Testing desktop entry in DESKTOP_TARGET..."
     local desktop_file="$DESKTOP_TARGET/omnisnap.desktop"
@@ -136,6 +204,7 @@ test_regression_suites() {
         "$SCRIPT_DIR/test_selection_details.sh"
         "$SCRIPT_DIR/test_toolbar.sh"
         "$SCRIPT_DIR/test_region_selection.sh"
+        "$SCRIPT_DIR/test_screen_edges.sh"
         "$SCRIPT_DIR/test_quickshell_syntax.sh"
     )
 
@@ -154,6 +223,8 @@ test_regression_suites() {
 
 test_installer_execution
 test_bin_symlink
+test_edges_symlink
+test_default_home_install
 test_desktop_entry
 test_cli_via_symlink
 test_regression_suites

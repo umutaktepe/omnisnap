@@ -36,6 +36,7 @@ _call_ipc() {
 
 _launch_oneshot() {
     local action="$1"
+    "$PROJECT_DIR/bin/omnisnap-edges" recover 2>/dev/null || true
     OMNISNAP_INITIAL_ACTION="$action" exec quickshell -p "$PROJECT_DIR"
 }
 
@@ -81,6 +82,7 @@ case "$ACTION" in
         if _is_running; then
             echo "$APP_NAME daemon is already running."
         else
+            "$PROJECT_DIR/bin/omnisnap-edges" recover 2>/dev/null || true
             echo "Starting $APP_NAME daemon..."
             exec quickshell -p "$PROJECT_DIR" &
         fi
