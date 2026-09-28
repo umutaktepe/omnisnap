@@ -1,7 +1,7 @@
 import QtQuick
 import "../../../theme"
 import "../../../components"
-import "../ScreenshotAction.qml"
+import ".."
 
 Item {
     id: root

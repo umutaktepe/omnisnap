@@ -1,12 +1,14 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import "../theme"
 
 IconImage {
     id: root
 
     property string name: ""
     property int size: 24
+    property color color: Theme.text
 
     implicitSize: size
 

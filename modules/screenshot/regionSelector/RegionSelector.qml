@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import "../ScreenshotAction.qml"
+import ".."
 import "."
 
 Scope {

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../../../theme"
 import "../../../components"
-import "../ScreenshotAction.qml"
+import ".."
 
 Rectangle {
     id: root

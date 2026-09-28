@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../../../theme"
-import "../ScreenshotAction.qml"
 import ".."
 import "."
 
