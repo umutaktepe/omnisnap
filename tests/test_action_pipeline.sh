@@ -79,6 +79,8 @@ assert "ScreenshotAction.SnipAction.Copy" in content, "Missing Copy case in getS
 assert "ScreenshotAction.SnipAction.Edit" in content, "Missing Edit case in getScript"
 assert "ScreenshotAction.SnipAction.Search" in content, "Missing Search case in getScript"
 assert "ScreenshotAction.SnipAction.CharRecognition" in content, "Missing CharRecognition case in getScript"
+assert 'wl-copy -t image/png < "$saveFile";' in content, "Missing wl-copy in Copy case"
+assert ') &' in content, "Missing asynchronous subshell ') &' in ScreenshotAction.qml"
 
 def escapeShellStr(s):
     if not s: return "''"
@@ -104,8 +106,10 @@ for action in actions:
             f'saveFile="$SAVE_DIR/screenshot-$(date +%Y-%m-%d_%H.%M.%S).png" && '
             f'{cropBase} "$saveFile" && '
             f'wl-copy -t image/png < "$saveFile"; '
+            f'( '
             f'ACTION=$(notify-send "Screenshot Captured" "Saved to $saveFile" -i "$saveFile" -a "Omnisnap" --action="open=Open" --action="folder=Open Folder" 2>/dev/null || true); '
-            f'if [ "$ACTION" = "open" ]; then xdg-open "$saveFile"; elif [ "$ACTION" = "folder" ]; then xdg-open "$SAVE_DIR"; fi; '
+            f'if [ "$ACTION" = "open" ]; then xdg-open "$saveFile"; elif [ "$ACTION" = "folder" ]; then xdg-open "$SAVE_DIR"; fi '
+            f') & '
             f'{cleanup}'
         )
     elif action == "Edit":
@@ -189,9 +193,109 @@ test_ocr_preprocessing() {
     fi
 }
 
+test_copy_action_async_execution() {
+    # Verify ScreenshotAction.qml structure for asynchronous notification subshell
+    if ! grep -q 'wl-copy -t image/png < "$saveFile";' "$QML_FILE"; then
+        echo "FAIL: Copy action in $QML_FILE must run wl-copy synchronously before notification subshell"
+        exit 1
+    fi
+
+    if ! grep -q ') &' "$QML_FILE"; then
+        echo "FAIL: Copy action in $QML_FILE must launch notification subshell in background using ') &'"
+        exit 1
+    fi
+
+    # Set up mock binaries to test non-blocking execution
+    local mock_bin_dir tmp_dir test_img
+    mock_bin_dir="$(mktemp -d /tmp/test-omnisnap-bin-XXXXXX)"
+    tmp_dir="$(mktemp -d /tmp/test-omnisnap-data-XXXXXX)"
+    test_img="$tmp_dir/test-screen.png"
+    magick -size 80x80 xc:green "$test_img"
+
+    # Mock notify-send that simulates user deliberation / notification delay
+    cat << 'EOF' > "$mock_bin_dir/notify-send"
+#!/bin/bash
+sleep 2
+echo "open"
+EOF
+    chmod +x "$mock_bin_dir/notify-send"
+
+    # Mock wl-copy that records timestamp and payload
+    cat << 'EOF' > "$mock_bin_dir/wl-copy"
+#!/bin/bash
+cat > "$TMPDIR_MOCK/clipboard.png"
+date +%s%N > "$TMPDIR_MOCK/copied.ts"
+EOF
+    chmod +x "$mock_bin_dir/wl-copy"
+
+    # Mock xdg-open
+    cat << 'EOF' > "$mock_bin_dir/xdg-open"
+#!/bin/bash
+echo "$@" >> "$TMPDIR_MOCK/opened.log"
+EOF
+    chmod +x "$mock_bin_dir/xdg-open"
+
+    export TMPDIR_MOCK="$tmp_dir"
+
+    # Execute the copy pipeline script with mock binaries in PATH
+    local start_ns end_ns elapsed_ms
+    start_ns=$(date +%s%N)
+
+    PATH="$mock_bin_dir:$PATH" bash -c "
+        set -euo pipefail;
+        SAVE_DIR='$tmp_dir/Screenshots';
+        SAVE_DIR=\"\${SAVE_DIR/#\\~/\$HOME}\";
+        mkdir -p \"\$SAVE_DIR\" &&
+        saveFile=\"\$SAVE_DIR/screenshot-\$(date +%Y-%m-%d_%H.%M.%S).png\" &&
+        magick '$test_img' -crop 50x50+10+10 +repage \"\$saveFile\" &&
+        wl-copy -t image/png < \"\$saveFile\";
+        (
+            ACTION=\$(notify-send \"Screenshot Captured\" \"Saved to \$saveFile\" -i \"\$saveFile\" -a \"Omnisnap\" --action=\"open=Open\" --action=\"folder=Open Folder\" 2>/dev/null || true);
+            if [ \"\$ACTION\" = \"open\" ]; then xdg-open \"\$saveFile\"; elif [ \"\$ACTION\" = \"folder\" ]; then xdg-open \"\$SAVE_DIR\"; fi
+        ) &
+        rm -f '$test_img'
+    "
+    end_ns=$(date +%s%N)
+    elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
+
+    # 1. Verify wl-copy ran immediately
+    if [[ ! -f "$tmp_dir/copied.ts" ]]; then
+        echo "FAIL: wl-copy was not executed"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    # 2. Verify screenshot file was saved and non-empty
+    local saved_count
+    saved_count=$(find "$tmp_dir/Screenshots" -type f -name "screenshot-*.png" -size +0c | wc -l)
+    if [[ "$saved_count" -ne 1 ]]; then
+        echo "FAIL: Saved screenshot file not found or empty in $tmp_dir/Screenshots"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    # 3. Verify original screenshot was cleaned up
+    if [[ -f "$test_img" ]]; then
+        echo "FAIL: Original screenshot was not cleaned up"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    # 4. Verify the script did NOT block waiting for notify-send (notify-send sleeps 2000ms)
+    if [[ "$elapsed_ms" -ge 1500 ]]; then
+        echo "FAIL: Copy pipeline blocked on notify-send! Elapsed: ${elapsed_ms}ms (expected < 1500ms)"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    echo "PASS: Copy action non-blocking notification subshell verified (completed in ${elapsed_ms}ms, notify-send delayed 2000ms)"
+    rm -rf "$mock_bin_dir" "$tmp_dir"
+}
+
 test_imagemagick_crop
 test_qml_structure_and_lint
 test_action_scripts_bash_syntax
+test_copy_action_async_execution
 test_ocr_preprocessing
 
 echo "All action pipeline tests passed."
