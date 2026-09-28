@@ -58,5 +58,12 @@ Check status:
 omnisnap status
 ```
 
+## 💡 Acknowledgements & Credits
+Omnisnap's screen freeze architecture and overlay UX were inspired by:
+- **[caelestia-kde](https://github.com/ladybug-me/caelestia-kde)** by [ladybug-me](https://github.com/ladybug-me)
+- **[caelestia-dots/shell](https://github.com/caelestia-dots/shell)** by [soramanew](https://github.com/soramanew)
+
+Sincere thanks to the Caelestia contributors for their pioneering work on Wayland LayerShell screenshot overlays and visual design in the Linux desktop ecosystem.
+
 ## 📄 License
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
