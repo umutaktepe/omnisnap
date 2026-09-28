@@ -9,30 +9,44 @@ Scope {
     property bool active: false
     property var action: ScreenshotAction.SnipAction.Copy
 
+    function edgesBin() {
+        const base = Quickshell.shellDir || ".";
+        if (base.indexOf("regionSelector") !== -1) {
+            return base + "/../../../bin/omnisnap-edges";
+        }
+        return base + "/bin/omnisnap-edges";
+    }
+
     function dismiss() {
+        Quickshell.execDetached([edgesBin(), "restore"]);
         root.active = false;
         // If not running in daemon mode, quit quickshell
         if (Quickshell.env("OMNISNAP_DAEMON") !== "1" && Quickshell.env("OMNISNAP_INITIAL_ACTION") !== "") {
+            Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`]);
             Qt.quit();
         }
     }
 
     function screenshot() {
+        Quickshell.execDetached([edgesBin(), "inhibit"]);
         root.action = ScreenshotAction.SnipAction.Copy;
         root.active = true;
     }
 
     function edit() {
+        Quickshell.execDetached([edgesBin(), "inhibit"]);
         root.action = ScreenshotAction.SnipAction.Edit;
         root.active = true;
     }
 
     function search() {
+        Quickshell.execDetached([edgesBin(), "inhibit"]);
         root.action = ScreenshotAction.SnipAction.Search;
         root.active = true;
     }
 
     function ocr() {
+        Quickshell.execDetached([edgesBin(), "inhibit"]);
         root.action = ScreenshotAction.SnipAction.CharRecognition;
         root.active = true;
     }

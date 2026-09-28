@@ -64,10 +64,11 @@ PanelWindow {
 
     function snip() {
         root.snipExecuted = true;
-        let rx = root.regionX;
-        let ry = root.regionY;
-        let rw = root.regionWidth;
-        let rh = root.regionHeight;
+        const isFullScreen = (arguments.length > 0 && arguments[0] === true);
+        let rx = isFullScreen ? 0 : root.regionX;
+        let ry = isFullScreen ? 0 : root.regionY;
+        let rw = isFullScreen ? root.screen.width : root.regionWidth;
+        let rh = isFullScreen ? root.screen.height : root.regionHeight;
 
         // Very small selection = fallback to full screen
         if (rw < 4 || rh < 4) {
@@ -147,6 +148,7 @@ PanelWindow {
 
         // Selection details (darkening borders + aim lines + dimension badge)
         RectCornersSelectionDetails {
+            enabled: false
             anchors.fill: parent
             regionX: root.regionX
             regionY: root.regionY
@@ -158,6 +160,7 @@ PanelWindow {
 
         // Dynamic cursor guide pill
         CursorGuide {
+            enabled: false
             x: mouseArea.mouseX
             y: mouseArea.mouseY
             action: (root.mouseButton === Qt.RightButton && root.action === ScreenshotAction.SnipAction.Copy)
@@ -165,24 +168,21 @@ PanelWindow {
                 : root.action
             active: !root.dragging
         }
+    }
 
-        // Bottom toolbar
-        OptionsToolbar {
-            anchors {
-                horizontalCenter: parent.horizontalCenter
-                bottom: parent.bottom
-                bottomMargin: 16
-            }
-            action: root.action
-            onActionChanged: newAction => root.action = newAction
-            onDismiss: root.dismiss()
-            onFullScreenRequested: {
-                root.regionX = 0;
-                root.regionY = 0;
-                root.regionWidth = root.screen.width;
-                root.regionHeight = root.screen.height;
-                root.snip();
-            }
+    // Bottom toolbar
+    OptionsToolbar {
+        z: 100
+        anchors {
+            horizontalCenter: parent.horizontalCenter
+            bottom: parent.bottom
+            bottomMargin: 16
+        }
+        action: root.action
+        onActionChanged: newAction => root.action = newAction
+        onDismiss: root.dismiss()
+        onFullScreenRequested: {
+            root.snip(true);
         }
     }
 }

@@ -6,11 +6,13 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 TEMP_PROC_FILE="$PROJECT_DIR/modules/screenshot/TempScreenshotProcess.qml"
 REGION_SELECTION_FILE="$PROJECT_DIR/modules/screenshot/regionSelector/RegionSelection.qml"
+REGION_SELECTOR_FILE="$PROJECT_DIR/modules/screenshot/regionSelector/RegionSelector.qml"
 
 test_files_exist() {
     local files=(
         "$TEMP_PROC_FILE"
         "$REGION_SELECTION_FILE"
+        "$REGION_SELECTOR_FILE"
     )
 
     for f in "${files[@]}"; do
@@ -31,6 +33,7 @@ test_qmllint_syntax() {
     local qml_files=(
         "$TEMP_PROC_FILE"
         "$REGION_SELECTION_FILE"
+        "$REGION_SELECTOR_FILE"
     )
 
     for qml in "${qml_files[@]}"; do
@@ -136,6 +139,78 @@ test_snip_and_lifecycle_handling() {
     echo "PASS: Process hooks, snip logic, cleanup, escape handlers, and child components verified"
 }
 
+test_pointer_event_passthrough_and_screen_edges() {
+    # 1. Verify RectCornersSelectionDetails has enabled: false
+    grep -A 10 'RectCornersSelectionDetails {' "$REGION_SELECTION_FILE" | grep -q 'enabled: false' || {
+        echo "FAIL: RectCornersSelectionDetails must have enabled: false"
+        exit 1
+    }
+
+    # 2. Verify CursorGuide has enabled: false
+    grep -A 10 'CursorGuide {' "$REGION_SELECTION_FILE" | grep -q 'enabled: false' || {
+        echo "FAIL: CursorGuide must have enabled: false"
+        exit 1
+    }
+
+    # 3. Verify OptionsToolbar has high z-index (z: 100) and is placed outside MouseArea
+    grep -A 5 'OptionsToolbar {' "$REGION_SELECTION_FILE" | grep -q 'z: 100' || {
+        echo "FAIL: OptionsToolbar must specify z: 100"
+        exit 1
+    }
+
+    python3 -c "
+with open('$REGION_SELECTION_FILE') as f:
+    content = f.read()
+mouse_area_idx = content.find('MouseArea {')
+options_toolbar_idx = content.find('OptionsToolbar {')
+if mouse_area_idx == -1 or options_toolbar_idx == -1:
+    raise SystemExit('MouseArea or OptionsToolbar missing')
+level = 0
+mouse_area_end = -1
+for i in range(mouse_area_idx, len(content)):
+    if content[i] == '{':
+        level += 1
+    elif content[i] == '}':
+        level -= 1
+        if level == 0:
+            mouse_area_end = i
+            break
+if options_toolbar_idx < mouse_area_end:
+    raise SystemExit('OptionsToolbar is nested inside MouseArea')
+" || { echo "FAIL: OptionsToolbar must be placed outside MouseArea"; exit 1; }
+
+    # 4. Verify RegionSelector.qml invokes bin/omnisnap-edges inhibit on activation (screenshot, edit, search, ocr)
+    grep -q 'omnisnap-edges' "$REGION_SELECTOR_FILE" || {
+        echo "FAIL: RegionSelector.qml must reference omnisnap-edges"
+        exit 1
+    }
+
+    for action in screenshot edit search ocr; do
+        awk "/function $action\\(\\)/, /}/" "$REGION_SELECTOR_FILE" | grep -q 'inhibit' || {
+            echo "FAIL: $action() in RegionSelector.qml must invoke omnisnap-edges inhibit"
+            exit 1
+        }
+    done
+
+    # 5. Verify RegionSelector.qml invokes bin/omnisnap-edges restore in dismiss()
+    awk '/function dismiss\(\)/, /}/' "$REGION_SELECTOR_FILE" | grep -q 'restore' || {
+        echo "FAIL: dismiss() in RegionSelector.qml must invoke omnisnap-edges restore"
+        exit 1
+    }
+
+    # 6. Verify RegionSelector.qml terminates oneshot Quickshell via kill -TERM Quickshell.processId
+    grep -q 'Quickshell.processId' "$REGION_SELECTOR_FILE" || {
+        echo "FAIL: RegionSelector.qml must reference Quickshell.processId"
+        exit 1
+    }
+    grep -q 'Quickshell.execDetached(\["kill", "-TERM", `${Quickshell.processId}`\])' "$REGION_SELECTOR_FILE" || {
+        echo "FAIL: RegionSelector.qml must invoke Quickshell.execDetached with kill -TERM Quickshell.processId"
+        exit 1
+    }
+
+    echo "PASS: Pointer event passthrough, UI hierarchy isolation, and screen edge inhibitor integration verified"
+}
+
 test_regression_suite() {
     echo "Running complete regression test suite..."
     bash "$PROJECT_DIR/tests/test_cli.sh"
@@ -154,6 +229,7 @@ main() {
     test_region_selection_layershell_and_properties
     test_geometry_and_monitor_scale
     test_snip_and_lifecycle_handling
+    test_pointer_event_passthrough_and_screen_edges
     test_regression_suite
     echo "All screen freeze engine and region selection tests passed successfully."
 }
