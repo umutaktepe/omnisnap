@@ -57,13 +57,13 @@ Item {
                     Icon {
                         name: tabBtn.modelData.icon
                         size: 15
-                        color: tabBtn.isCurrent ? Theme.onPrimary : Theme.text
+                        color: tabBtn.isCurrent ? Theme.textOnPrimary : Theme.text
                         Layout.alignment: Qt.AlignVCenter
                     }
 
                     StyledText {
                         text: tabBtn.modelData.name
-                        color: tabBtn.isCurrent ? Theme.onPrimary : Theme.text
+                        color: tabBtn.isCurrent ? Theme.textOnPrimary : Theme.text
                         font.bold: tabBtn.isCurrent
                         font.pixelSize: 12
                         Layout.alignment: Qt.AlignVCenter

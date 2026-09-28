@@ -52,7 +52,7 @@ test_toolbar_tab_bar_properties_and_delegates() {
 
     # Check active tab styling
     grep -q 'Theme.primary' "$TAB_BAR_FILE" || { echo "FAIL: ToolbarTabBar.qml missing Theme.primary for active tab background"; exit 1; }
-    grep -q 'Theme.onPrimary' "$TAB_BAR_FILE" || { echo "FAIL: ToolbarTabBar.qml missing Theme.onPrimary for active tab foreground"; exit 1; }
+    grep -q 'Theme.textOnPrimary' "$TAB_BAR_FILE" || { echo "FAIL: ToolbarTabBar.qml missing Theme.textOnPrimary for active tab foreground"; exit 1; }
     grep -q 'Behavior on color' "$TAB_BAR_FILE" || { echo "FAIL: ToolbarTabBar.qml missing smooth animated color transition"; exit 1; }
 
     # Check mouse interaction
