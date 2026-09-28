@@ -116,7 +116,15 @@ test_cli_via_symlink() {
         exit 1
     fi
 
-    echo "PASS: CLI executed successfully via installed symlink"
+    # Verify that PROJECT_DIR resolves to REPO_DIR through the symlink and not to BIN_TARGET/..
+    local debug_out
+    debug_out=$(bash -x "$symlink" status 2>&1 || true)
+    if ! echo "$debug_out" | grep -q "PROJECT_DIR=$REPO_DIR"; then
+        echo "FAIL: Symlink did not resolve PROJECT_DIR to $REPO_DIR (got: $debug_out)"
+        exit 1
+    fi
+
+    echo "PASS: CLI executed and correctly resolved PROJECT_DIR via installed symlink"
 }
 
 test_regression_suites() {
