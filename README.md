@@ -25,8 +25,8 @@ Ensure the following packages are installed on your system (e.g. via `pacman`, `
 
 ## 🚀 Installation
 ```bash
-git clone https://github.com/<your-username>/Omnisnap.git
-cd Omnisnap
+git clone https://github.com/umutaktepe/omnisnap.git
+cd omnisnap
 ./install.sh
 ```
 
@@ -57,3 +57,6 @@ Check status:
 ```bash
 omnisnap status
 ```
+
+## 📄 License
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
