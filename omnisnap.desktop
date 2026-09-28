@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Omnisnap
+Comment=Modern Screenshot Tool for KDE Plasma 6
+Exec=omnisnap region
+Icon=camera-photo
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+Keywords=screenshot;snip;capture;ocr;lens;
