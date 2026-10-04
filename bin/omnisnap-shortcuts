@@ -30,6 +30,7 @@ _write_kconfig() {
         python3 -c "
 import configparser, sys
 cfg = configparser.RawConfigParser()
+cfg.optionxform = str
 cfg.read('$KCONFIG_FILE')
 group = f'$group1][$group2'
 if not cfg.has_section(group):
@@ -52,6 +53,7 @@ _read_kconfig() {
         python3 -c "
 import configparser, sys
 cfg = configparser.RawConfigParser()
+cfg.optionxform = str
 cfg.read('$KCONFIG_FILE')
 group = f'$group1][$group2'
 if cfg.has_section(group) and cfg.has_option(group, sys.argv[1]):

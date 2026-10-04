@@ -42,10 +42,18 @@ _launch_oneshot() {
     OMNISNAP_INITIAL_ACTION="$action" exec quickshell -p "$PROJECT_DIR"
 }
 
+_ensure_desktop_and_shortcuts() {
+    local desktop_file="${OMNISNAP_DESKTOP_TARGET:-${XDG_DATA_HOME:-$HOME/.local/share}/applications}/omnisnap.desktop"
+    if [ ! -f "$desktop_file" ] || ! grep -q "X-KDE-Shortcuts" "$desktop_file" 2>/dev/null; then
+        "$PROJECT_DIR/bin/omnisnap-shortcuts" apply-defaults >/dev/null 2>&1 || true
+    fi
+}
+
 ACTION="${1:-region}"
 
 case "$ACTION" in
     region|-r|--region)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "screenshot"
         else
@@ -53,6 +61,7 @@ case "$ACTION" in
         fi
         ;;
     full|-f|--full)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "fullscreen"
         else
@@ -60,6 +69,7 @@ case "$ACTION" in
         fi
         ;;
     window|-w|--window|active)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "window"
         else
@@ -67,6 +77,7 @@ case "$ACTION" in
         fi
         ;;
     edit|-e|--edit)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "edit"
         else
@@ -74,6 +85,7 @@ case "$ACTION" in
         fi
         ;;
     ocr|-o|--ocr)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "ocr"
         else
@@ -81,6 +93,7 @@ case "$ACTION" in
         fi
         ;;
     search|-s|--search)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "search"
         else
@@ -88,6 +101,7 @@ case "$ACTION" in
         fi
         ;;
     settings|-c|--settings|config)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             _call_ipc "settings"
         else
@@ -95,6 +109,7 @@ case "$ACTION" in
         fi
         ;;
     daemon|-d|--daemon)
+        _ensure_desktop_and_shortcuts
         if _is_running; then
             echo "$APP_NAME daemon is already running."
         else

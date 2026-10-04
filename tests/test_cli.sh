@@ -287,6 +287,93 @@ EOF
     echo "PASS: test_window_subcommands"
 }
 
+test_auto_desktop_registration() {
+    # 1. Structural check: bin/omnisnap contains _ensure_desktop_and_shortcuts
+    if ! grep -q "_ensure_desktop_and_shortcuts" "$BIN"; then
+        echo "FAIL: bin/omnisnap does not define _ensure_desktop_and_shortcuts"
+        exit 1
+    fi
+
+    local test_tmp
+    test_tmp=$(mktemp -d /tmp/omnisnap_test_cli_auto_XXXXXX)
+    local mock_bin="$test_tmp/bin"
+    mkdir -p "$mock_bin"
+
+    local log_file="$test_tmp/shortcuts.log"
+    cat <<EOF > "$mock_bin/omnisnap-shortcuts"
+#!/usr/bin/env bash
+echo "\$*" >> "$log_file"
+EOF
+    chmod +x "$mock_bin/omnisnap-shortcuts"
+
+    cat <<EOF > "$mock_bin/omnisnap-edges"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/omnisnap-edges"
+
+    cat <<EOF > "$mock_bin/quickshell"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/quickshell"
+
+    cat <<EOF > "$mock_bin/pgrep"
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$mock_bin/pgrep"
+
+    local desktop_dir="$test_tmp/applications"
+    mkdir -p "$desktop_dir"
+
+    # Case 1: Desktop file does not exist -> apply-defaults should be called
+    PATH="$mock_bin:$PATH" \
+    OMNISNAP_PROJECT_DIR="$test_tmp" \
+    OMNISNAP_DESKTOP_TARGET="$desktop_dir" \
+    "$BIN" region >/dev/null 2>&1 || true
+
+    if [[ ! -f "$log_file" ]] || ! grep -q "apply-defaults" "$log_file"; then
+        echo "FAIL: bin/omnisnap did not invoke 'omnisnap-shortcuts apply-defaults' when desktop file is missing"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    # Case 2: Desktop file exists but lacks X-KDE-Shortcuts -> apply-defaults should be called
+    rm -f "$log_file"
+    echo "[Desktop Entry]" > "$desktop_dir/omnisnap.desktop"
+    echo "Name=Omnisnap" >> "$desktop_dir/omnisnap.desktop"
+
+    PATH="$mock_bin:$PATH" \
+    OMNISNAP_PROJECT_DIR="$test_tmp" \
+    OMNISNAP_DESKTOP_TARGET="$desktop_dir" \
+    "$BIN" region >/dev/null 2>&1 || true
+
+    if [[ ! -f "$log_file" ]] || ! grep -q "apply-defaults" "$log_file"; then
+        echo "FAIL: bin/omnisnap did not invoke 'omnisnap-shortcuts apply-defaults' when desktop file lacks X-KDE-Shortcuts"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    # Case 3: Desktop file exists and contains X-KDE-Shortcuts -> apply-defaults should NOT be called
+    rm -f "$log_file"
+    echo "X-KDE-Shortcuts=Print" >> "$desktop_dir/omnisnap.desktop"
+
+    PATH="$mock_bin:$PATH" \
+    OMNISNAP_PROJECT_DIR="$test_tmp" \
+    OMNISNAP_DESKTOP_TARGET="$desktop_dir" \
+    "$BIN" region >/dev/null 2>&1 || true
+
+    if [[ -f "$log_file" ]] && grep -q "apply-defaults" "$log_file"; then
+        echo "FAIL: bin/omnisnap invoked 'omnisnap-shortcuts apply-defaults' when desktop file is already up-to-date"
+        rm -rf "$test_tmp"
+        exit 1
+    fi
+
+    rm -rf "$test_tmp"
+    echo "PASS: test_auto_desktop_registration"
+}
+
 test_executable_bit
 test_help_flag
 test_unknown_action
@@ -294,4 +381,5 @@ test_status_when_not_running
 test_screen_edge_recovery_on_start
 test_settings_subcommands
 test_window_subcommands
+test_auto_desktop_registration
 echo "All CLI tests passed."

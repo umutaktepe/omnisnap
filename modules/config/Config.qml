@@ -119,6 +119,6 @@ QtObject {
 
     Component.onCompleted: {
         root.load();
-        Quickshell.execDetached([root.shortcutsBin(), "install-desktop"]);
+        Quickshell.execDetached([root.shortcutsBin(), "apply-defaults"]);
     }
 }

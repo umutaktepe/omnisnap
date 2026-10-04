@@ -1062,6 +1062,7 @@ FloatingWindow {
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
+                                                Config.applyKdeShortcuts();
                                                 Quickshell.execDetached(["kcmshell6", "kcm_keys"]);
                                             }
                                         }
