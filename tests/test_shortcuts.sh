@@ -128,8 +128,48 @@ test_set_and_get_shortcut() {
     echo "PASS: set and get shortcut verified"
 }
 
+test_desktop_entry_kde_shortcuts() {
+    local root_shortcut
+    root_shortcut="$(awk -F'=' '/^\[Desktop Entry\]/{flag=1; next} /^\[/{flag=0} flag && /^X-KDE-Shortcuts=/{print $2}' "$DESKTOP_SRC")"
+    if [[ "$root_shortcut" != "Print" ]]; then
+        echo "FAIL: Root [Desktop Entry] does not have X-KDE-Shortcuts=Print (got '$root_shortcut')"
+        exit 1
+    fi
+
+    local region_shortcut
+    region_shortcut="$(awk -F'=' '/^\[Desktop Action Region\]/{flag=1; next} /^\[/{flag=0} flag && /^X-KDE-Shortcuts=/{print $2}' "$DESKTOP_SRC")"
+    if [[ "$region_shortcut" != "Print" ]]; then
+        echo "FAIL: [Desktop Action Region] does not have X-KDE-Shortcuts=Print (got '$region_shortcut')"
+        exit 1
+    fi
+
+    local window_shortcut
+    window_shortcut="$(awk -F'=' '/^\[Desktop Action Window\]/{flag=1; next} /^\[/{flag=0} flag && /^X-KDE-Shortcuts=/{print $2}' "$DESKTOP_SRC")"
+    if [[ "$window_shortcut" != "Meta+Print" ]]; then
+        echo "FAIL: [Desktop Action Window] does not have X-KDE-Shortcuts=Meta+Print (got '$window_shortcut')"
+        exit 1
+    fi
+
+    local fullscreen_shortcut
+    fullscreen_shortcut="$(awk -F'=' '/^\[Desktop Action FullScreen\]/{flag=1; next} /^\[/{flag=0} flag && /^X-KDE-Shortcuts=/{print $2}' "$DESKTOP_SRC")"
+    if [[ "$fullscreen_shortcut" != "Shift+Print" ]]; then
+        echo "FAIL: [Desktop Action FullScreen] does not have X-KDE-Shortcuts=Shift+Print (got '$fullscreen_shortcut')"
+        exit 1
+    fi
+
+    local settings_shortcut
+    settings_shortcut="$(awk -F'=' '/^\[Desktop Action Settings\]/{flag=1; next} /^\[/{flag=0} flag && /^X-KDE-Shortcuts=/{print $2}' "$DESKTOP_SRC")"
+    if [[ "$settings_shortcut" != "Meta+Shift+Print" ]]; then
+        echo "FAIL: [Desktop Action Settings] does not have X-KDE-Shortcuts=Meta+Shift+Print (got '$settings_shortcut')"
+        exit 1
+    fi
+
+    echo "PASS: Desktop entry and desktop actions X-KDE-Shortcuts verified"
+}
+
 test_files_exist
 test_help_and_subcommands
+test_desktop_entry_kde_shortcuts
 test_install_desktop_isolated
 test_apply_defaults_isolated
 test_set_and_get_shortcut

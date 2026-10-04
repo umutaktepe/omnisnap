@@ -1,6 +1,9 @@
 [Desktop Entry]
 Name=Omnisnap
+GenericName=Screen Capture Tool
+GenericName[tr]=Ekran Görüntüsü Yakalama Aracı
 Comment=Modern Screenshot Tool for KDE Plasma 6
+Comment[tr]=KDE Plasma 6 İçin Modern Ekran Yakalama Aracı
 Exec=omnisnap region
 Icon=camera-photo
 Terminal=false
@@ -8,27 +11,32 @@ Type=Application
 Categories=Utility;Graphics;
 Keywords=screenshot;snip;capture;ocr;lens;
 Actions=Region;FullScreen;Window;Settings;
+X-KDE-Shortcuts=Print
 
 [Desktop Action Region]
 Name=Capture Rectangular Region
-Name[tr]=Bölge Yakala
+Name[tr]=Bölge Seçimi ve Yakalama
 Exec=omnisnap region
 Icon=select-rectangular
-
-[Desktop Action FullScreen]
-Name=Capture Entire Desktop
-Name[tr]=Tüm Ekranı Yakala
-Exec=omnisnap full
-Icon=view-fullscreen
+X-KDE-Shortcuts=Print
 
 [Desktop Action Window]
 Name=Capture Active Window
 Name[tr]=Aktif Pencereyi Yakala
 Exec=omnisnap window
 Icon=window
+X-KDE-Shortcuts=Meta+Print
+
+[Desktop Action FullScreen]
+Name=Capture Entire Desktop
+Name[tr]=Tüm Ekranı Yakala
+Exec=omnisnap full
+Icon=view-fullscreen
+X-KDE-Shortcuts=Shift+Print
 
 [Desktop Action Settings]
 Name=Omnisnap Settings
 Name[tr]=Omnisnap Ayarları
 Exec=omnisnap settings
 Icon=preferences-system
+X-KDE-Shortcuts=Meta+Shift+Print
