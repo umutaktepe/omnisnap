@@ -100,6 +100,36 @@ test_apply_defaults_isolated() {
         exit 1
     }
 
+    grep -q "_k_friendly_name=Omnisnap" "$test_kcfg" || {
+        echo "FAIL: Missing _k_friendly_name=Omnisnap"
+        rm -rf "$tmp_config_dir"
+        exit 1
+    }
+
+    grep -q "_launch=Print" "$test_kcfg" || {
+        echo "FAIL: Missing _launch=Print shortcut"
+        rm -rf "$tmp_config_dir"
+        exit 1
+    }
+
+    grep -q "Settings=Meta+Shift+Print" "$test_kcfg" || {
+        echo "FAIL: Missing Settings=Meta+Shift+Print shortcut"
+        rm -rf "$tmp_config_dir"
+        exit 1
+    }
+
+    if [[ ! -f "$tmp_config_dir/omnisnap.desktop" ]]; then
+        echo "FAIL: omnisnap.desktop not found in target directory"
+        rm -rf "$tmp_config_dir"
+        exit 1
+    fi
+
+    grep -q "X-KDE-Shortcuts=Print" "$tmp_config_dir/omnisnap.desktop" || {
+        echo "FAIL: Installed desktop file missing X-KDE-Shortcuts=Print"
+        rm -rf "$tmp_config_dir"
+        exit 1
+    }
+
     rm -rf "$tmp_config_dir"
     echo "PASS: apply-defaults writes correct desktop actions to kglobalshortcutsrc"
 }

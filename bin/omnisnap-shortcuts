@@ -21,7 +21,7 @@ _write_kconfig() {
             notify_flag="--notify"
         fi
         if [ -n "$notify_flag" ]; then
-            kwriteconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" "$value" "$notify_flag" 2>/dev/null || true
+            kwriteconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" --notify "$value" 2>/dev/null || true
         else
             kwriteconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" "$value" 2>/dev/null || true
         fi
@@ -81,11 +81,11 @@ apply_defaults() {
 
     # Register Omnisnap Desktop Actions in KDE KGlobalAccel
     _write_kconfig "services" "omnisnap.desktop" "_k_friendly_name" "Omnisnap" false
+    _write_kconfig "services" "omnisnap.desktop" "_launch" "Print,Print,Launch Omnisnap" false
     _write_kconfig "services" "omnisnap.desktop" "Region" "Print,Print,Capture Rectangular Region" false
     _write_kconfig "services" "omnisnap.desktop" "Window" "Meta+Print,Meta+Print,Capture Active Window" false
     _write_kconfig "services" "omnisnap.desktop" "FullScreen" "Shift+Print,Shift+Print,Capture Entire Desktop" false
-    _write_kconfig "services" "omnisnap.desktop" "Settings" "Meta+Shift+Print,Meta+Shift+Print,Omnisnap Settings" false
-    _write_kconfig "services" "omnisnap.desktop" "_launch" "none" true
+    _write_kconfig "services" "omnisnap.desktop" "Settings" "Meta+Shift+Print,Meta+Shift+Print,Omnisnap Settings" true
 
     # Unbind conflicting Spectacle defaults so Omnisnap takes priority
     _write_kconfig "services" "org.kde.spectacle.desktop" "RectangularRegionScreenShot" "none" false
