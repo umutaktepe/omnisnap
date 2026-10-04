@@ -30,6 +30,41 @@ test_imagemagick_crop() {
     fi
 }
 
+test_max_resolution_downscaling() {
+    local tmp_orig tmp_resized width height
+    tmp_orig="$(mktemp /tmp/test-res-orig-XXXXXX.png)"
+    tmp_resized="$(mktemp /tmp/test-res-down-XXXXXX.png)"
+
+    # Create a 3840x2160 4K image
+    magick -size 3840x2160 xc:red "$tmp_orig"
+
+    # Apply 1920x1080> downscaling: must shrink to 1920x1080
+    magick "$tmp_orig" -resize '1920x1080>' "$tmp_resized"
+    width=$(identify -format "%w" "$tmp_resized")
+    height=$(identify -format "%h" "$tmp_resized")
+
+    if [[ "$width" -ne 1920 || "$height" -ne 1080 ]]; then
+        echo "FAIL: Downscaling 4K with 1920x1080> failed, got ${width}x${height}"
+        rm -f "$tmp_orig" "$tmp_resized"
+        exit 1
+    fi
+
+    # Test that smaller images (800x600) are NOT upscaled by > geometry
+    magick -size 800x600 xc:green "$tmp_orig"
+    magick "$tmp_orig" -resize '1920x1080>' "$tmp_resized"
+    width=$(identify -format "%w" "$tmp_resized")
+    height=$(identify -format "%h" "$tmp_resized")
+
+    rm -f "$tmp_orig" "$tmp_resized"
+
+    if [[ "$width" -ne 800 || "$height" -ne 600 ]]; then
+        echo "FAIL: Small image was erroneously resized with > flag, got ${width}x${height}"
+        exit 1
+    fi
+
+    echo "PASS: ImageMagick max resolution downscale logic verified"
+}
+
 test_qml_structure_and_lint() {
     if [[ ! -f "$QML_FILE" ]]; then
         echo "FAIL: $QML_FILE not found"
@@ -79,8 +114,10 @@ assert "ScreenshotAction.SnipAction.Copy" in content, "Missing Copy case in getS
 assert "ScreenshotAction.SnipAction.Edit" in content, "Missing Edit case in getScript"
 assert "ScreenshotAction.SnipAction.Search" in content, "Missing Search case in getScript"
 assert "ScreenshotAction.SnipAction.CharRecognition" in content, "Missing CharRecognition case in getScript"
-assert 'wl-copy -t image/png < "$saveFile";' in content, "Missing wl-copy in Copy case"
+assert 'wl-copy -t image/' in content, "Missing wl-copy in Copy case"
 assert ') &' in content, "Missing asynchronous subshell ') &' in ScreenshotAction.qml"
+assert 'Config.maxResolution' in content or 'activeMaxRes' in content, "Missing max resolution handling in ScreenshotAction.qml"
+assert 'Config.fileFormat' in content or 'ext' in content, "Missing fileFormat handling in ScreenshotAction.qml"
 
 def escapeShellStr(s):
     if not s: return "''"
@@ -90,83 +127,110 @@ actions = ["Copy", "Edit", "Search", "CharRecognition"]
 x, y, w, h = 10, 20, 100, 200
 screenshotPath = "/tmp/test-screen.png"
 rx, ry, rw, rh = x, y, w, h
-cropBase = f"magick '{escapeShellStr(screenshotPath)}' -crop {rw}x{rh}+{rx}+{ry} +repage"
 cleanup = f"rm -f '{escapeShellStr(screenshotPath)}'"
 targetDir = "~/Pictures/Screenshots"
 fileUploadApiEndpoint = "https://uguu.se/upload"
 lensBaseUrl = "https://lens.google.com/uploadbyurl?url="
 
-for action in actions:
-    if action == "Copy":
-        script = (
-            f"set -euo pipefail; "
-            f"SAVE_DIR='{escapeShellStr(targetDir)}'; "
-            f'SAVE_DIR="${{SAVE_DIR/#\\~/$HOME}}"; '
-            f'mkdir -p "$SAVE_DIR" && '
-            f'saveFile="$SAVE_DIR/screenshot-$(date +%Y-%m-%d_%H.%M.%S).png" && '
-            f'{cropBase} "$saveFile" && '
-            f'wl-copy -t image/png < "$saveFile"; '
-            f'( '
-            f'ACTION=$(notify-send "Screenshot Captured" "Saved to $saveFile" -i "$saveFile" -a "Omnisnap" --action="open=Open" --action="folder=Open Folder" 2>/dev/null || true); '
-            f'if [ "$ACTION" = "open" ]; then xdg-open "$saveFile"; elif [ "$ACTION" = "folder" ]; then xdg-open "$SAVE_DIR"; fi '
-            f') & '
-            f'{cleanup}'
-        )
-    elif action == "Edit":
-        script = (
-            f"set -euo pipefail; "
-            f"SAVE_DIR='{escapeShellStr(targetDir)}'; "
-            f'SAVE_DIR="${{SAVE_DIR/#\\~/$HOME}}"; '
-            f'mkdir -p "$SAVE_DIR" && '
-            f'saveFile="$SAVE_DIR/screenshot-$(date +%Y-%m-%d_%H.%M.%S).png" && '
-            f'TMPF=$(mktemp /tmp/omnisnap-edit-XXXXXX.png); '
-            f'{cropBase} "$TMPF" && '
-            f'swappy -f "$TMPF" -o "$saveFile" || true; '
-            f'if [ -s "$saveFile" ]; then '
-            f'    wl-copy -t image/png < "$saveFile"; '
-            f'    notify-send "Screenshot Edited" "Saved to $saveFile" -i "$saveFile" -a "Omnisnap" 2>/dev/null || true; '
-            f'fi; '
-            f'rm -f "$TMPF"; {cleanup}'
-        )
-    elif action == "Search":
-        script = (
-            f"set -euo pipefail; "
-            f'TMPF=$(mktemp /tmp/omnisnap-search-XXXXXX.png); '
-            f'{cropBase} "$TMPF" && '
-            f"UPLOAD_URL=$(curl -sF files[]=@\"$TMPF\" '{fileUploadApiEndpoint}' | jq -r '.files[0].url' 2>/dev/null || true); "
-            f'if [ -n "$UPLOAD_URL" ] && [ "$UPLOAD_URL" != "null" ]; then '
-            f'    xdg-open "{lensBaseUrl}$UPLOAD_URL"; '
-            f'else '
-            f'    notify-send -u critical "Search Failed" "Could not upload screenshot for image search." -a "Omnisnap" 2>/dev/null || true; '
-            f'fi; '
-            f'rm -f "$TMPF"; {cleanup}'
-        )
-    elif action == "CharRecognition":
-        script = (
-            f"set -euo pipefail; "
-            f'TMPF=$(mktemp /tmp/omnisnap-ocr-XXXXXX.png); '
-            f'{cropBase} -colorspace gray -type grayscale -contrast-stretch 0 -resize 300% "$TMPF" && '
-            f'LANGS=$(tesseract --list-langs 2>/dev/null | awk \'NR>1 && $1!="osd" {{print $1}}\' | tr \'\\n\' \'+\' | sed \'s/\\+$//\'); '
-            f'if [ -n "$LANGS" ]; then '
-            f'    TEXT=$(tesseract "$TMPF" stdout -l "$LANGS" 2>/dev/null || true); '
-            f'else '
-            f'    TEXT=$(tesseract "$TMPF" stdout 2>/dev/null || true); '
-            f'fi; '
-            f'if [ -n "$TEXT" ]; then '
-            f'    printf "%s" "$TEXT" | wl-copy; '
-            f'    notify-send "Text Recognized" "$TEXT" -a "Omnisnap" 2>/dev/null || true; '
-            f'else '
-            f'    notify-send "OCR Finished" "No text detected in selected region." -a "Omnisnap" 2>/dev/null || true; '
-            f'fi; '
-            f'rm -f "$TMPF"; {cleanup}'
-        )
+# Test permutations of configuration options
+configs = [
+    {"maxRes": "", "format": "png", "saveToFile": True, "copyToClipboard": True, "ocr": ""},
+    {"maxRes": "1920x1080>", "format": "jpg", "saveToFile": True, "copyToClipboard": True, "ocr": "eng+tur"},
+    {"maxRes": "2560x1440>", "format": "webp", "saveToFile": False, "copyToClipboard": True, "ocr": "deu"},
+    {"maxRes": "", "format": "png", "saveToFile": True, "copyToClipboard": False, "ocr": ""},
+    {"maxRes": "1280x720>", "format": "png", "saveToFile": False, "copyToClipboard": False, "ocr": ""},
+]
 
-    res = subprocess.run(["bash", "-n", "-c", script], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if res.returncode != 0:
-        print(f"FAIL: Action {action} script syntax error: {res.stderr}")
-        sys.exit(1)
+for cfg in configs:
+    maxRes = cfg["maxRes"]
+    ext = cfg["format"].lower()
+    saveToFile = cfg["saveToFile"]
+    copyToClipboard = cfg["copyToClipboard"]
+    ocrLangs = cfg["ocr"]
 
-print("PASS: All action scripts passed bash syntax verification")
+    resizeArg = f" -resize '{escapeShellStr(maxRes)}'" if maxRes.strip() else ""
+    cropBase = f"magick '{escapeShellStr(screenshotPath)}' -crop {rw}x{rh}+{rx}+{ry} +repage{resizeArg}"
+
+    for action in actions:
+        if action == "Copy":
+            saveCmd = (
+                f'saveFile="$SAVE_DIR/screenshot-$(date +%Y-%m-%d_%H.%M.%S).{ext}" && {cropBase} "$saveFile"'
+                if saveToFile else
+                f'saveFile="$(mktemp /tmp/omnisnap-clip-XXXXXX.{ext})" && {cropBase} "$saveFile"'
+            )
+            clipboardCmd = f'wl-copy -t image/{"jpeg" if ext == "jpg" else ext} < "$saveFile"; ' if copyToClipboard else ""
+            notifyCleanup = 'rm -f "$saveFile"; ' if not saveToFile else ""
+            script = (
+                f"set -euo pipefail; "
+                f"SAVE_DIR='{escapeShellStr(targetDir)}'; "
+                f'SAVE_DIR="${{SAVE_DIR/#\\~/$HOME}}"; '
+                f'mkdir -p "$SAVE_DIR" && '
+                f'{saveCmd} && '
+                f'{clipboardCmd}'
+                f'( '
+                f'ACTION=$(notify-send "Screenshot Captured" "Saved to $saveFile" -i "$saveFile" -a "Omnisnap" --action="open=Open" --action="folder=Open Folder" 2>/dev/null || true); '
+                f'if [ "$ACTION" = "open" ]; then xdg-open "$saveFile"; elif [ "$ACTION" = "folder" ]; then xdg-open "$SAVE_DIR"; fi; '
+                f'{notifyCleanup}'
+                f') & '
+                f'{cleanup}'
+            )
+        elif action == "Edit":
+            clipboardCmd = f'wl-copy -t image/{"jpeg" if ext == "jpg" else ext} < "$saveFile"; ' if copyToClipboard else ""
+            script = (
+                f"set -euo pipefail; "
+                f"SAVE_DIR='{escapeShellStr(targetDir)}'; "
+                f'SAVE_DIR="${{SAVE_DIR/#\\~/$HOME}}"; '
+                f'mkdir -p "$SAVE_DIR" && '
+                f'saveFile="$SAVE_DIR/screenshot-$(date +%Y-%m-%d_%H.%M.%S).{ext}" && '
+                f'TMPF=$(mktemp /tmp/omnisnap-edit-XXXXXX.{ext}); '
+                f'{cropBase} "$TMPF" && '
+                f'swappy -f "$TMPF" -o "$saveFile" || true; '
+                f'if [ -s "$saveFile" ]; then '
+                f'    {clipboardCmd}'
+                f'    notify-send "Screenshot Edited" "Saved to $saveFile" -i "$saveFile" -a "Omnisnap" 2>/dev/null || true; '
+                f'fi; '
+                f'rm -f "$TMPF"; {cleanup}'
+            )
+        elif action == "Search":
+            script = (
+                f"set -euo pipefail; "
+                f'TMPF=$(mktemp /tmp/omnisnap-search-XXXXXX.png); '
+                f'{cropBase} "$TMPF" && '
+                f"UPLOAD_URL=$(curl -sF files[]=@\"$TMPF\" '{fileUploadApiEndpoint}' | jq -r '.files[0].url' 2>/dev/null || true); "
+                f'if [ -n "$UPLOAD_URL" ] && [ "$UPLOAD_URL" != "null" ]; then '
+                f'    xdg-open "{lensBaseUrl}$UPLOAD_URL"; '
+                f'else '
+                f'    notify-send -u critical "Search Failed" "Could not upload screenshot for image search." -a "Omnisnap" 2>/dev/null || true; '
+                f'fi; '
+                f'rm -f "$TMPF"; {cleanup}'
+            )
+        elif action == "CharRecognition":
+            langArg = f"-l '{escapeShellStr(ocrLangs)}'" if ocrLangs.strip() else ""
+            script = (
+                f"set -euo pipefail; "
+                f'TMPF=$(mktemp /tmp/omnisnap-ocr-XXXXXX.png); '
+                f'{cropBase} -colorspace gray -type grayscale -contrast-stretch 0 -resize 300% "$TMPF" && '
+                f'if [ -n "{langArg}" ]; then '
+                f'    TEXT=$(tesseract "$TMPF" stdout {langArg} 2>/dev/null || true); '
+                f'else '
+                f'    LANGS=$(tesseract --list-langs 2>/dev/null | awk \'NR>1 && $1!="osd" {{print $1}}\' | tr \'\\n\' \'+\' | sed \'s/\\+$//\'); '
+                f'    if [ -n "$LANGS" ]; then TEXT=$(tesseract "$TMPF" stdout -l "$LANGS" 2>/dev/null || true); else TEXT=$(tesseract "$TMPF" stdout 2>/dev/null || true); fi; '
+                f'fi; '
+                f'if [ -n "$TEXT" ]; then '
+                f'    printf "%s" "$TEXT" | wl-copy; '
+                f'    notify-send "Text Recognized" "$TEXT" -a "Omnisnap" 2>/dev/null || true; '
+                f'else '
+                f'    notify-send "OCR Finished" "No text detected in selected region." -a "Omnisnap" 2>/dev/null || true; '
+                f'fi; '
+                f'rm -f "$TMPF"; {cleanup}'
+            )
+
+        res = subprocess.run(["bash", "-n", "-c", script], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode != 0:
+            print(f"FAIL: Action {action} script syntax error with config {cfg}: {res.stderr}")
+            sys.exit(1)
+
+print("PASS: All action scripts passed bash syntax verification across configuration matrix")
 PYEOF
     echo "PASS: Action script syntax tests passed"
 }
@@ -195,7 +259,7 @@ test_ocr_preprocessing() {
 
 test_copy_action_async_execution() {
     # Verify ScreenshotAction.qml structure for asynchronous notification subshell
-    if ! grep -q 'wl-copy -t image/png < "$saveFile";' "$QML_FILE"; then
+    if ! grep -q 'wl-copy -t image/' "$QML_FILE"; then
         echo "FAIL: Copy action in $QML_FILE must run wl-copy synchronously before notification subshell"
         exit 1
     fi
@@ -299,10 +363,80 @@ EOF
     rm -rf "$mock_bin_dir" "$tmp_dir"
 }
 
+test_save_to_file_disabled_pipeline() {
+    local mock_bin_dir tmp_dir test_img
+    mock_bin_dir="$(mktemp -d /tmp/test-omnisnap-bin-XXXXXX)"
+    tmp_dir="$(mktemp -d /tmp/test-omnisnap-data-XXXXXX)"
+    test_img="$tmp_dir/test-screen.png"
+    magick -size 60x60 xc:yellow "$test_img"
+
+    cat << 'EOF' > "$mock_bin_dir/notify-send"
+#!/bin/bash
+echo "captured"
+EOF
+    chmod +x "$mock_bin_dir/notify-send"
+
+    cat << 'EOF' > "$mock_bin_dir/wl-copy"
+#!/bin/bash
+cat > "$TMPDIR_MOCK/clipboard.png"
+EOF
+    chmod +x "$mock_bin_dir/wl-copy"
+
+    export TMPDIR_MOCK="$tmp_dir"
+
+    PATH="$mock_bin_dir:$PATH" bash -c "
+        set -euo pipefail;
+        SAVE_DIR='$tmp_dir/Screenshots';
+        SAVE_DIR=\"\${SAVE_DIR/#\\~/\$HOME}\";
+        mkdir -p \"\$SAVE_DIR\" &&
+        saveFile=\"\$(mktemp $tmp_dir/omnisnap-clip-XXXXXX.png)\" &&
+        magick '$test_img' -crop 40x40+5+5 +repage \"\$saveFile\" &&
+        wl-copy -t image/png < \"\$saveFile\";
+        (
+            ACTION=\$(notify-send \"Screenshot Captured\" \"Saved to \$saveFile\" -i \"\$saveFile\" -a \"Omnisnap\" 2>/dev/null || true);
+            rm -f \"\$saveFile\";
+        ) &
+        rm -f '$test_img'
+    "
+
+    # Wait for the background subshell to finish
+    sleep 0.1
+
+    # Verify clipboard was populated
+    if [[ ! -s "$tmp_dir/clipboard.png" ]]; then
+        echo "FAIL: wl-copy clipboard data missing when saveToFile is disabled"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    # Verify temp clip file was deleted after notification
+    local clip_count
+    clip_count=$(find "$tmp_dir" -type f -name "omnisnap-clip-*" | wc -l)
+    if [[ "$clip_count" -ne 0 ]]; then
+        echo "FAIL: Temp clip file was not removed after notification when saveToFile is disabled"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    # Verify no file was saved in Screenshots directory
+    local saved_count
+    saved_count=$(find "$tmp_dir/Screenshots" -type f | wc -l)
+    if [[ "$saved_count" -ne 0 ]]; then
+        echo "FAIL: A file was saved to Screenshots directory even though saveToFile is disabled"
+        rm -rf "$mock_bin_dir" "$tmp_dir"
+        exit 1
+    fi
+
+    echo "PASS: Pipeline saveToFile=false temporary file and cleanup verified"
+    rm -rf "$mock_bin_dir" "$tmp_dir"
+}
+
 test_imagemagick_crop
+test_max_resolution_downscaling
 test_qml_structure_and_lint
 test_action_scripts_bash_syntax
 test_copy_action_async_execution
+test_save_to_file_disabled_pipeline
 test_ocr_preprocessing
 
 echo "All action pipeline tests passed."

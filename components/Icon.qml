@@ -38,6 +38,8 @@ IconImage {
                 return "window-close";
             case "desktop_windows":
                 return "video-display";
+            case "settings":
+                return "preferences-system";
             default:
                 return iconName;
         }

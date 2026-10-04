@@ -7,3 +7,28 @@ Terminal=false
 Type=Application
 Categories=Utility;Graphics;
 Keywords=screenshot;snip;capture;ocr;lens;
+Actions=Region;FullScreen;Window;Settings;
+
+[Desktop Action Region]
+Name=Capture Rectangular Region
+Name[tr]=Bölge Yakala
+Exec=omnisnap region
+Icon=select-rectangular
+
+[Desktop Action FullScreen]
+Name=Capture Entire Desktop
+Name[tr]=Tüm Ekranı Yakala
+Exec=omnisnap full
+Icon=view-fullscreen
+
+[Desktop Action Window]
+Name=Capture Active Window
+Name[tr]=Aktif Pencereyi Yakala
+Exec=omnisnap window
+Icon=window
+
+[Desktop Action Settings]
+Name=Omnisnap Settings
+Name[tr]=Omnisnap Ayarları
+Exec=omnisnap settings
+Icon=preferences-system

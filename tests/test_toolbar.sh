@@ -72,6 +72,7 @@ test_options_toolbar_properties_and_controls() {
     grep -q 'property var action: ScreenshotAction.SnipAction.Copy' "$TOOLBAR_FILE" || { echo "FAIL: Missing default property var action in OptionsToolbar.qml"; exit 1; }
     grep -q 'signal dismiss()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal dismiss() in OptionsToolbar.qml"; exit 1; }
     grep -q 'signal fullScreenRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal fullScreenRequested() in OptionsToolbar.qml"; exit 1; }
+    grep -q 'signal openSettingsRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal openSettingsRequested() in OptionsToolbar.qml"; exit 1; }
 
     # Check pill container styling
     grep -q 'color: Theme.surface' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing Theme.surface background"; exit 1; }
@@ -85,6 +86,10 @@ test_options_toolbar_properties_and_controls() {
     grep -q 'icon: "fullscreen"' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing fullscreen IconButton"; exit 1; }
     grep -q 'root.fullScreenRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Fullscreen button must emit fullScreenRequested()"; exit 1; }
 
+    # Check Settings IconButton
+    grep -q 'icon: "settings"' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing settings IconButton"; exit 1; }
+    grep -q 'root.openSettingsRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Settings button must emit openSettingsRequested()"; exit 1; }
+
     # Check Close IconButton
     grep -q 'icon: "close"' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing close IconButton"; exit 1; }
     grep -q 'root.dismiss()' "$TOOLBAR_FILE" || { echo "FAIL: Close button must emit dismiss()"; exit 1; }
@@ -92,6 +97,7 @@ test_options_toolbar_properties_and_controls() {
     # Check Tooltips
     grep -q 'Tooltip {' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing Tooltip components"; exit 1; }
     grep -q 'Capture Full Screen' "$TOOLBAR_FILE" || { echo "FAIL: Missing 'Capture Full Screen' tooltip text"; exit 1; }
+    grep -q 'Ayarlar' "$TOOLBAR_FILE" || { echo "FAIL: Missing 'Ayarlar' tooltip text"; exit 1; }
     grep -q 'Cancel' "$TOOLBAR_FILE" || { echo "FAIL: Missing 'Cancel' tooltip text"; exit 1; }
 
     echo "PASS: OptionsToolbar.qml pill container, separator, buttons, and tooltips verified"
@@ -142,6 +148,7 @@ Item {
     property var action: ScreenshotAction.SnipAction.Copy
     property bool dismissed: false
     property bool fullScreenRequested: false
+    property bool settingsRequested: false
 
     ToolbarTabBar {
         id: customTabBar
@@ -165,6 +172,7 @@ Item {
         onActionChanged: root.action = toolbar.action
         onDismiss: root.dismissed = true
         onFullScreenRequested: root.fullScreenRequested = true
+        onOpenSettingsRequested: root.settingsRequested = true
     }
 }
 EOF

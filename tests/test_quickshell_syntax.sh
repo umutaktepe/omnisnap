@@ -124,6 +124,8 @@ test_shell_structure() {
     grep -q 'function ocr()' "$SHELL_FILE" || { echo "FAIL: Missing ocr() IPC handler"; exit 1; }
     grep -q 'selector.ocr()' "$SHELL_FILE" || { echo "FAIL: IPC ocr() must call selector.ocr()"; exit 1; }
 
+    grep -q 'function window()' "$SHELL_FILE" || { echo "FAIL: Missing window() IPC handler"; exit 1; }
+    grep -q 'spectacle -b -n -a -o' "$SHELL_FILE" || { echo "FAIL: window() must execute spectacle active window capture"; exit 1; }
     grep -q 'function fullscreen()' "$SHELL_FILE" || { echo "FAIL: Missing fullscreen() IPC handler"; exit 1; }
     grep -q 'Quickshell.execDetached' "$SHELL_FILE" || { echo "FAIL: Missing Quickshell.execDetached in shell.qml"; exit 1; }
     grep -q 'spectacle -b -n -f -o' "$SHELL_FILE" || { echo "FAIL: fullscreen() must execute spectacle fullscreen capture"; exit 1; }

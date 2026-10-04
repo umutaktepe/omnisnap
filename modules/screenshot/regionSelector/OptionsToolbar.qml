@@ -10,6 +10,7 @@ Rectangle {
     property var action: ScreenshotAction.SnipAction.Copy
     signal dismiss()
     signal fullScreenRequested()
+    signal openSettingsRequested()
 
     color: Theme.surface
     radius: height / 2
@@ -80,6 +81,14 @@ Rectangle {
             round: true
             onClicked: root.fullScreenRequested()
             Tooltip { target: fsBtn; text: "Capture Full Screen" }
+        }
+
+        IconButton {
+            id: settingsBtn
+            icon: "settings"
+            round: true
+            onClicked: root.openSettingsRequested()
+            Tooltip { target: settingsBtn; text: "Ayarlar" }
         }
 
         IconButton {

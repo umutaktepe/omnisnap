@@ -8,6 +8,7 @@ Scope {
 
     property bool active: false
     property var action: ScreenshotAction.SnipAction.Copy
+    signal openSettingsRequested()
 
     function edgesBin() {
         const base = Quickshell.shellDir || ".";
@@ -25,6 +26,12 @@ Scope {
             Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`]);
             Qt.quit();
         }
+    }
+
+    function openSettings() {
+        Quickshell.execDetached([edgesBin(), "restore"]);
+        root.active = false;
+        root.openSettingsRequested();
     }
 
     function screenshot() {
@@ -62,6 +69,7 @@ Scope {
                 screen: loader.modelData
                 action: root.action
                 onDismiss: root.dismiss()
+                onOpenSettingsRequested: root.openSettings()
             }
         }
     }

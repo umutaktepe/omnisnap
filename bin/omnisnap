@@ -15,9 +15,11 @@ Usage:
 Commands:
   region, -r, --region     Interactive region screenshot (default)
   full, -f, --full         Instant full-screen screenshot
+  window, -w, --window     Capture active window
   edit, -e, --edit         Region capture with annotation (Swappy)
   ocr, -o, --ocr           Region capture with OCR text recognition
   search, -s, --search     Region capture with Google Lens search
+  settings, -c, --settings Open Omnisnap settings window
   daemon, -d, --daemon     Start background daemon for instant response
   stop, -k, --stop         Stop running background daemon
   status                   Check if background daemon is running
@@ -57,6 +59,13 @@ case "$ACTION" in
             _launch_oneshot "fullscreen"
         fi
         ;;
+    window|-w|--window|active)
+        if _is_running; then
+            _call_ipc "window"
+        else
+            _launch_oneshot "window"
+        fi
+        ;;
     edit|-e|--edit)
         if _is_running; then
             _call_ipc "edit"
@@ -76,6 +85,13 @@ case "$ACTION" in
             _call_ipc "search"
         else
             _launch_oneshot "search"
+        fi
+        ;;
+    settings|-c|--settings|config)
+        if _is_running; then
+            _call_ipc "settings"
+        else
+            _launch_oneshot "settings"
         fi
         ;;
     daemon|-d|--daemon)

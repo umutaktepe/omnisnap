@@ -15,6 +15,10 @@ test_help_flag() {
     "$BIN" --help | grep -q "Omnisnap" || { echo "FAIL: --help did not output Omnisnap banner"; exit 1; }
     "$BIN" -h | grep -q "Usage:" || { echo "FAIL: -h did not output usage"; exit 1; }
     "$BIN" help | grep -q "Usage:" || { echo "FAIL: help did not output usage"; exit 1; }
+    "$BIN" --help | grep -q "settings" || { echo "FAIL: --help did not output settings command"; exit 1; }
+    "$BIN" --help | grep -q -- "-c, --settings" || { echo "FAIL: --help did not document -c, --settings flags"; exit 1; }
+    "$BIN" --help | grep -q "window" || { echo "FAIL: --help did not output window command"; exit 1; }
+    "$BIN" --help | grep -q -- "-w, --window" || { echo "FAIL: --help did not document -w, --window flags"; exit 1; }
     echo "PASS: test_help_flag"
 }
 
@@ -149,9 +153,145 @@ EOF
     echo "PASS: test_screen_edge_recovery_on_start"
 }
 
+test_settings_subcommands() {
+    local test_tmp
+    test_tmp=$(mktemp -d /tmp/omnisnap_test_cli_settings_XXXXXX)
+    local mock_bin="$test_tmp/bin"
+    mkdir -p "$mock_bin"
+
+    local log_qs="$test_tmp/qs.log"
+    local log_quickshell="$test_tmp/quickshell.log"
+
+    cat << 'EOF' > "$mock_bin/omnisnap-edges"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/omnisnap-edges"
+
+    cat << EOF > "$mock_bin/quickshell"
+#!/usr/bin/env bash
+echo "quickshell init_action=\${OMNISNAP_INITIAL_ACTION:-} args=\$*" >> "$log_quickshell"
+exit 0
+EOF
+    chmod +x "$mock_bin/quickshell"
+
+    cat << EOF > "$mock_bin/qs"
+#!/usr/bin/env bash
+echo "qs args=\$*" >> "$log_qs"
+exit 0
+EOF
+    chmod +x "$mock_bin/qs"
+
+    # 1. Test oneshot dispatch for all aliases (settings, -c, --settings, config)
+    cat << 'EOF' > "$mock_bin/pgrep"
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$mock_bin/pgrep"
+
+    for cmd in settings -c --settings config; do
+        rm -f "$log_quickshell"
+        PATH="$mock_bin:$PATH" "$BIN" "$cmd" >/dev/null 2>&1 || true
+        if [[ ! -f "$log_quickshell" ]] || ! grep -q "init_action=settings" "$log_quickshell"; then
+            echo "FAIL: bin/omnisnap '$cmd' did not launch quickshell with OMNISNAP_INITIAL_ACTION=settings in oneshot mode"
+            rm -rf "$test_tmp"
+            exit 1
+        fi
+    done
+
+    # 2. Test IPC dispatch when daemon is running
+    cat << 'EOF' > "$mock_bin/pgrep"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/pgrep"
+
+    for cmd in settings -c --settings config; do
+        rm -f "$log_qs"
+        PATH="$mock_bin:$PATH" "$BIN" "$cmd" >/dev/null 2>&1 || true
+        if [[ ! -f "$log_qs" ]] || ! grep -q "ipc call region settings" "$log_qs"; then
+            echo "FAIL: bin/omnisnap '$cmd' did not call 'qs ... ipc call region settings' when daemon is running"
+            rm -rf "$test_tmp"
+            exit 1
+        fi
+    done
+
+    rm -rf "$test_tmp"
+    echo "PASS: test_settings_subcommands"
+}
+
+test_window_subcommands() {
+    local test_tmp
+    test_tmp=$(mktemp -d /tmp/omnisnap_test_cli_window_XXXXXX)
+    local mock_bin="$test_tmp/bin"
+    mkdir -p "$mock_bin"
+
+    local log_qs="$test_tmp/qs.log"
+    local log_quickshell="$test_tmp/quickshell.log"
+
+    cat << 'EOF' > "$mock_bin/omnisnap-edges"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/omnisnap-edges"
+
+    cat << EOF > "$mock_bin/quickshell"
+#!/usr/bin/env bash
+echo "quickshell init_action=\${OMNISNAP_INITIAL_ACTION:-} args=\$*" >> "$log_quickshell"
+exit 0
+EOF
+    chmod +x "$mock_bin/quickshell"
+
+    cat << EOF > "$mock_bin/qs"
+#!/usr/bin/env bash
+echo "qs args=\$*" >> "$log_qs"
+exit 0
+EOF
+    chmod +x "$mock_bin/qs"
+
+    # 1. Test oneshot dispatch for all window aliases (window, -w, --window, active)
+    cat << 'EOF' > "$mock_bin/pgrep"
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$mock_bin/pgrep"
+
+    for cmd in window -w --window active; do
+        rm -f "$log_quickshell"
+        PATH="$mock_bin:$PATH" "$BIN" "$cmd" >/dev/null 2>&1 || true
+        if [[ ! -f "$log_quickshell" ]] || ! grep -q "init_action=window" "$log_quickshell"; then
+            echo "FAIL: bin/omnisnap '$cmd' did not launch quickshell with OMNISNAP_INITIAL_ACTION=window in oneshot mode"
+            rm -rf "$test_tmp"
+            exit 1
+        fi
+    done
+
+    # 2. Test IPC dispatch when daemon is running
+    cat << 'EOF' > "$mock_bin/pgrep"
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$mock_bin/pgrep"
+
+    for cmd in window -w --window active; do
+        rm -f "$log_qs"
+        PATH="$mock_bin:$PATH" "$BIN" "$cmd" >/dev/null 2>&1 || true
+        if [[ ! -f "$log_qs" ]] || ! grep -q "ipc call region window" "$log_qs"; then
+            echo "FAIL: bin/omnisnap '$cmd' did not call 'qs ... ipc call region window' when daemon is running"
+            rm -rf "$test_tmp"
+            exit 1
+        fi
+    done
+
+    rm -rf "$test_tmp"
+    echo "PASS: test_window_subcommands"
+}
+
 test_executable_bit
 test_help_flag
 test_unknown_action
 test_status_when_not_running
 test_screen_edge_recovery_on_start
+test_settings_subcommands
+test_window_subcommands
 echo "All CLI tests passed."

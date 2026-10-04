@@ -11,6 +11,7 @@ PanelWindow {
     required property ShellScreen screen
     property var action: ScreenshotAction.SnipAction.Copy
     signal dismiss()
+    signal openSettingsRequested()
 
     visible: false
     color: "transparent"
@@ -57,6 +58,12 @@ PanelWindow {
     }
 
     onDismiss: {
+        if (!root.snipExecuted && proc.screenshotPath) {
+            Quickshell.execDetached(["rm", "-f", proc.screenshotPath]);
+        }
+    }
+
+    onOpenSettingsRequested: {
         if (!root.snipExecuted && proc.screenshotPath) {
             Quickshell.execDetached(["rm", "-f", proc.screenshotPath]);
         }
@@ -190,6 +197,9 @@ PanelWindow {
         onDismiss: root.dismiss()
         onFullScreenRequested: {
             root.snip(true);
+        }
+        onOpenSettingsRequested: {
+            root.openSettingsRequested();
         }
     }
 }
