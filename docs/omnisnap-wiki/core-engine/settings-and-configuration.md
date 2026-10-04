@@ -140,7 +140,7 @@ Omnisnap, ImageMagick'in şartlı boyutlandırma bayrağını (`>`) kullanarak b
    - Varsayılan boyut: `740x560`, asgari boyut: `680x500`.
    - Sekme çubuğu yatay `Flickable` kapsayıcısına alınarak sekme taşmaları ve sağ kenardan kesilme sorunları tamamen önlenmiştir.
    - Masaüstünde serbestçe sürüklenebilir ve yeniden boyutlandırılabilir.
-   - Esc tuşu veya pencere kapatma butonu ile kapatılabilir.
+   - Esc tuşu, pencere içi kapat butonu veya KDE Plasma başlık çubuğu kapatma butonu ('X') / Alt+F4 (`onClosed`) ile kapatıldığında oneshot modunda süreci zombi bırakmadan temizce sonlandırır (`kill -TERM`).
 2. **Sekmeli Gezinme**:
    - **Görüntü ve Çözünürlük**: Dosya biçimi (`png`, `jpg`, `webp`), görüntü kalitesi kaydırıcısı (slider), maksimum çözünürlük hap butonları (Sınırsız, 4K, 1440p, 1080p, 720p) veya özel geometri girişi.
    - **Kayıt ve Pano**: Ekran görüntüsü kayıt klasörü yolu seçimi, panoya kopyalama ve dosyaya kaydetme anahtarları.

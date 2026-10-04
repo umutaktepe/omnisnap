@@ -105,3 +105,12 @@ Format standardı:
   - `modules/config/Config.qml`: `shortcutRegion`, `shortcutWindow`, `shortcutFullScreen`, `shortcutSettings` yapılandırma alanları, otomatik desktop kurulumu ve `applyKdeShortcuts()` / `setKdeShortcut()` entegrasyonu eklendi.
   - `tests/test_shortcuts.sh`: Kısayol motorunu, `.desktop` kurulumunu ve `kglobalshortcutsrc` yazma/okuma işlevlerini test eden yeni test süiti eklendi.
 - **İlgili Sayfalar**: [[floating-toolbar]], [[settings-and-configuration]], [[desktop-and-shortcuts]], [[cli-interface]], [[installation-and-packaging]].
+
+## [2026-10-05] [fix] | SettingsWindow Lifecycle and Titlebar Close Handling
+- **Kapsam**: Ayarlar penceresinin KDE başlık çubuğu ('X') veya Alt+F4 ile kapatılmasının ardından sürecin asılı kalması ve sonraki açılışlarda arayüzün anında kapanması hatasının çözümü.
+- **Çözüm**:
+  - `modules/settings/SettingsWindow.qml` içine `onClosed: root.close()` ve `_closing` re-entry koruması eklenerek pencere pencere yöneticisinden kapatıldığında da oneshot modunda sürecin temizce sonlanması (`kill -TERM`) sağlandı.
+  - `RegionSelector.qml` içerisinde `openSettings()` çağrısında `openSettingsRequested()` sırası `root.active = false` öncesine alınarak Wayland pencere unmap ve focus yarış durumu önlendi.
+  - `shell.qml` IpcHandler içindeki `settings()` metoduna da `isStandalone = true` güvencesi eklendi.
+  - `tests/test_settings_syntax.sh` süitine `onClosed` kontrolü eklendi ve tüm testlerin (12/12) başarıyla geçtiği doğrulandı.
+- **İlgili Sayfalar**: [[settings-and-configuration]], [[process-lifecycle]], [[execution-lifecycles]], [[floating-toolbar]].

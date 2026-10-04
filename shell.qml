@@ -89,6 +89,9 @@ ShellRoot {
         }
 
         function settings() {
+            if (Quickshell.env("OMNISNAP_DAEMON") !== "1") {
+                settingsWindow.isStandalone = true;
+            }
             settingsWindow.show();
         }
 

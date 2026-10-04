@@ -30,8 +30,8 @@ Scope {
 
     function openSettings() {
         Quickshell.execDetached([edgesBin(), "restore"]);
-        root.active = false;
         root.openSettingsRequested();
+        root.active = false;
     }
 
     function captureActiveWindow() {

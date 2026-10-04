@@ -22,6 +22,11 @@ FloatingWindow {
     property int currentTab: 0
     property bool saveSuccess: false
     property bool shortcutSyncSuccess: false
+    property bool _closing: false
+
+    onClosed: {
+        root.close();
+    }
 
     function show() {
         root.visible = true;
@@ -33,10 +38,13 @@ FloatingWindow {
     }
 
     function close() {
+        if (root._closing) return;
+        root._closing = true;
         root.visible = false;
-        if (root.isStandalone && !Quickshell.env("OMNISNAP_DAEMON")) {
+        if (root.isStandalone && Quickshell.env("OMNISNAP_DAEMON") !== "1") {
             Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`]);
         }
+        root._closing = false;
     }
 
     Timer {

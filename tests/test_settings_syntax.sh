@@ -51,6 +51,7 @@ test_settings_structure() {
     grep -q "applyKdeShortcuts" "$SETTINGS_QML" || { echo "FAIL: Missing applyKdeShortcuts call"; exit 1; }
     grep -q "setShortcutKey" "$SETTINGS_QML" || { echo "FAIL: Missing setShortcutKey implementation"; exit 1; }
     grep -q "shortcutSyncSuccess" "$SETTINGS_QML" || { echo "FAIL: Missing shortcutSyncSuccess notification"; exit 1; }
+    grep -q "onClosed:" "$SETTINGS_QML" || { echo "FAIL: Missing onClosed window manager close event handling"; exit 1; }
 
     echo "PASS: SettingsWindow structure, configuration bindings, and shortcut sync verified"
 }
