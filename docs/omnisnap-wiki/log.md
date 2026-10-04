@@ -10,6 +10,16 @@ Format standardı:
 
 ---
 
+## [2026-10-05] feat | KDE Plasma 6 KCM Keys ve Otomatik X-KDE-Shortcuts Entegrasyonu
+- **Kapsam**: KDE Plasma 6 KCM Keys (`kcmshell6 kcm_keys`) modülü ile standart freedesktop/KDE `X-KDE-Shortcuts` masaüstü entegrasyonu, KGlobalAccel çakışma yönetimi ve ilk çalıştırmada sessiz öz-kayıt mekanizması.
+- **Çözüm**:
+  - `omnisnap.desktop`: Kök girdi ve tüm masaüstü eylemlerine (`Region`, `Window`, `FullScreen`, `Settings`) `X-KDE-Shortcuts` direktifleri eklendi; KDE Sistem Ayarları Kısayollar menüsünde Spectacle gibi "Uygulamalar" altında simgeleri ve alt eylemleriyle listelenmesi ve "Varsayılana Sıfırla" desteği sağlandı.
+  - `bin/omnisnap-shortcuts`: `apply-defaults` komutu geliştirilerek `kglobalshortcutsrc` (`[services][omnisnap.desktop]`) altına `_k_friendly_name="Omnisnap"` ve `_launch` kaydı yazıldı; çakışan Spectacle eylemleri `none` yapılarak `kwriteconfig6 --notify` ile oturuma anında bildirildi.
+  - `bin/omnisnap`: `_ensure_desktop_and_shortcuts` kancası eklenerek uygulamanın ilk çağrısında masaüstü dosyasının mevcudiyeti ve `X-KDE-Shortcuts` yönergesi kontrol edilip arka planda sessizce kısayolların kurulması sağlandı.
+  - `docs/omnisnap-wiki/decisions/adr-007-kde-plasma-shortcuts-kcm-integration.md` oluşturuldu; `desktop-and-shortcuts.md` ve `index.md` Karpathy Living Architecture standartlarına tam uyumlu biçimde güncellendi.
+  - Test süitleri (`test_cli.sh`, `test_shortcuts.sh`, `run-tests.sh`) genişletilerek 12 test süitinin tamamı başarıyla doğrulandı.
+- **İlgili Sayfalar**: [[adr-007-kde-plasma-shortcuts-kcm-integration]], [[desktop-and-shortcuts]], [[cli-interface]], [[settings-and-configuration]], [[installation-and-packaging]], [[testing-harness]].
+
 ## [2026-10-05] [feat] | Active Window Capture Popover and Shortcuts Settings Tab
 - **Kapsam**: Seçim araç çubuğuna açılır yakalama modu menüsü (Tüm Ekran / Aktif Pencere) eklenmesi ve Ayarlar penceresine KDE KGlobalAccel entegrasyonlu Klavye Kısayolları sekmesinin kazandırılması.
 - **Çözüm**:

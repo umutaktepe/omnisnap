@@ -27,6 +27,7 @@ Kod tabanındaki kritik tasarım seçimleri, değerlendirilen alternatifler ve �
 - [[adr-004-multimodal-post-processing-pipeline]]: C++ eklentileri yerine modüler Unix boru hattı (`magick`, `wl-copy`, `notify-send`, `swappy`, `tesseract`, `curl`) kararı.
 - [[adr-005-layershell-pointer-transparency]]: Görsel kılavuz katmanlarında `enabled: false` kullanılarak fare bırakma olaylarının kilitlenmesini önleme kararı.
 - [[adr-006-settings-management-and-resolution-limits]]: XDG JSON tabanlı yapılandırma kalıcılığı, en-boy oranını koruyan ImageMagick çözünürlük kısıtlama bayrağı ve Quickshell FloatingWindow ayar penceresi seçimi.
+- [[adr-007-kde-plasma-shortcuts-kcm-integration]]: KDE Plasma 6 KCM Keys, standart X-KDE-Shortcuts yönergeleri ve ilk çalıştırmada sessiz kısayol kaydı mimarisi.
 
 ---
 
