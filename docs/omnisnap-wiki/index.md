@@ -2,7 +2,7 @@
 
 > **Paradigma:** Andrej Karpathy LLM Wiki / Living Architecture
 > **Hedef Sistem:** Omnisnap — KDE Plasma 6 (Wayland) Bağımsız Ekran Yakalama Aracı
-> **Son Güncelleme:** 2026-09-28
+> **Son Güncelleme:** 2026-10-05
 > **Kronolojik Kayıtlar:** [[log]]
 
 Bu wiki, Omnisnap kod tabanının yaşayan, ilişkisel mühendislik hafızasıdır. Kitap bölümleri yerine fonksiyonel domainler, atomik wikilinkler (`[[sayfa-adi]]`), cluster topolojisi ve Mimari Karar Kayıtları (ADR) ile organize edilmiştir.
@@ -67,6 +67,6 @@ Seçilen piksel alanının kırpılması ve hedeflenen eyleme yönlendirilmesi.
 CLI sözdizimi, KDE Plasma kısayol eşleştirmeleri, kurulum otomasyonu ve test takımı.
 
 - [[cli-interface]]: `bin/omnisnap` komut satırı bayrakları, daemon durum sorgulama ve IPC sinyalleri.
-- [[desktop-and-shortcuts]]: `omnisnap.desktop` spesifikasyonu, KDE Plasma 6 Kısayollar menüsü entegrasyonu ve Spectacle tuş değişimi.
+- [[desktop-and-shortcuts]]: `omnisnap.desktop` spesifikasyonu, `bin/omnisnap-shortcuts` otomasyon motoru, KDE Plasma 6 Kısayollar menüsü entegrasyonu ve Spectacle tuş değişimi.
 - [[installation-and-packaging]]: `install.sh` sembolik bağları, bağımlılık tablosu, yerel dizin kurulumu ve kaldırma adımları.
 - [[testing-harness]]: `tests/` altındaki bash ve `qmllint` regresyon test suitleri, test çalıştırma yönergeleri ve izolasyon.

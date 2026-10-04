@@ -12,15 +12,16 @@ FloatingWindow {
     title: "Omnisnap Ayarları"
     visible: false
 
-    implicitWidth: 640
-    implicitHeight: 520
-    minimumSize.width: 580
-    minimumSize.height: 480
+    implicitWidth: 740
+    implicitHeight: 560
+    minimumSize.width: 680
+    minimumSize.height: 500
     color: Theme.background
 
     property bool isStandalone: false
     property int currentTab: 0
     property bool saveSuccess: false
+    property bool shortcutSyncSuccess: false
 
     function show() {
         root.visible = true;
@@ -42,6 +43,32 @@ FloatingWindow {
         id: feedbackTimer
         interval: 2500
         onTriggered: root.saveSuccess = false
+    }
+
+    Timer {
+        id: shortcutSyncTimer
+        interval: 3000
+        onTriggered: root.shortcutSyncSuccess = false
+    }
+
+    function getShortcutKey(action) {
+        if (action === "Region") return Config.shortcutRegion;
+        if (action === "Window") return Config.shortcutWindow;
+        if (action === "FullScreen") return Config.shortcutFullScreen;
+        if (action === "Settings") return Config.shortcutSettings;
+        return "";
+    }
+
+    function setShortcutKey(action, key) {
+        if (action === "Region") Config.shortcutRegion = key;
+        else if (action === "Window") Config.shortcutWindow = key;
+        else if (action === "FullScreen") Config.shortcutFullScreen = key;
+        else if (action === "Settings") Config.shortcutSettings = key;
+
+        Config.setKdeShortcut(action, key);
+        Config.save();
+        root.shortcutSyncSuccess = true;
+        shortcutSyncTimer.restart();
     }
 
     Item {
@@ -113,7 +140,7 @@ FloatingWindow {
             // ================= TAB NAVIGATION =================
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 44
+                Layout.preferredHeight: 46
                 color: Theme.background
 
                 Rectangle {
@@ -123,61 +150,71 @@ FloatingWindow {
                     color: Theme.outline
                 }
 
-                Row {
+                Flickable {
                     anchors.fill: parent
                     anchors.leftMargin: 16
                     anchors.rightMargin: 16
-                    spacing: 8
+                    contentWidth: tabRowContainer.implicitWidth
+                    contentHeight: height
+                    flickableDirection: Flickable.HorizontalFlick
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    Repeater {
-                        model: [
-                            { name: "Görüntü ve Çözünürlük", icon: "insert-image" },
-                            { name: "Kayıt ve Pano", icon: "document-save" },
-                            { name: "Arayüz ve Seçim", icon: "preferences-system" },
-                            { name: "Klavye Kısayolları", icon: "keyboard" },
-                            { name: "OCR ve Metin", icon: "draw-text" }
-                        ]
+                    Row {
+                        id: tabRowContainer
+                        height: parent.height
+                        spacing: 8
 
-                        delegate: Rectangle {
-                            id: tabItem
-                            required property int index
-                            required property var modelData
+                        Repeater {
+                            model: [
+                                { name: "Görüntü ve Çözünürlük", icon: "insert-image" },
+                                { name: "Kayıt ve Pano", icon: "document-save" },
+                                { name: "Arayüz ve Seçim", icon: "preferences-system" },
+                                { name: "Klavye Kısayolları", icon: "keyboard" },
+                                { name: "OCR ve Metin", icon: "draw-text" }
+                            ]
 
-                            readonly property bool isSelected: root.currentTab === tabItem.index
+                            delegate: Rectangle {
+                                id: tabItem
+                                required property int index
+                                required property var modelData
 
-                            height: 32
-                            width: tabRow.implicitWidth + 24
-                            radius: 16
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: isSelected ? Theme.primary : (tabMouseArea.containsMouse ? Theme.surfaceHigh : "transparent")
+                                readonly property bool isSelected: root.currentTab === tabItem.index
 
-                            Behavior on color { ColorAnimation { duration: 120 } }
+                                height: 32
+                                width: tabRow.implicitWidth + 22
+                                radius: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: isSelected ? Theme.primary : (tabMouseArea.containsMouse ? Theme.surfaceHigh : "transparent")
 
-                            RowLayout {
-                                id: tabRow
-                                anchors.centerIn: parent
-                                spacing: 6
+                                Behavior on color { ColorAnimation { duration: 120 } }
 
-                                Icon {
-                                    name: tabItem.modelData.icon
-                                    size: 14
-                                    color: tabItem.isSelected ? Theme.textOnPrimary : Theme.textMuted
+                                RowLayout {
+                                    id: tabRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    Icon {
+                                        name: tabItem.modelData.icon
+                                        size: 14
+                                        color: tabItem.isSelected ? Theme.textOnPrimary : Theme.textMuted
+                                    }
+
+                                    StyledText {
+                                        text: tabItem.modelData.name
+                                        font.pixelSize: 12
+                                        font.bold: tabItem.isSelected
+                                        color: tabItem.isSelected ? Theme.textOnPrimary : Theme.text
+                                    }
                                 }
 
-                                StyledText {
-                                    text: tabItem.modelData.name
-                                    font.pixelSize: 12
-                                    font.bold: tabItem.isSelected
-                                    color: tabItem.isSelected ? Theme.textOnPrimary : Theme.text
+                                MouseArea {
+                                    id: tabMouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.currentTab = tabItem.index
                                 }
-                            }
-
-                            MouseArea {
-                                id: tabMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.currentTab = tabItem.index
                             }
                         }
                     }
@@ -948,17 +985,58 @@ FloatingWindow {
                                         }
 
                                         StyledText {
-                                            text: "Wayland ortamında küresel tuş kombinasyonları KDE KGlobalAccel mimarisiyle yönetilir."
+                                            text: "Kısayolları doğrudan düzenleyebilir veya tek tıkla arka planda KDE (kglobalshortcutsrc) sistemine işleyebilirsiniz."
                                             font.pixelSize: 11
                                             color: Theme.textMuted
                                         }
                                     }
 
+                                    // Button 1: ⚡ Varsayılanları KDE'ye Tanımla
                                     Rectangle {
-                                        Layout.preferredWidth: 140
+                                        Layout.preferredWidth: 165
                                         Layout.preferredHeight: 32
                                         radius: 6
-                                        color: kcmMouseArea.containsMouse ? Theme.surfaceHigh : Theme.primary
+                                        color: syncMouseArea.containsMouse ? Theme.surfaceHigh : Theme.primary
+
+                                        RowLayout {
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            Icon {
+                                                name: "check"
+                                                size: 14
+                                                color: syncMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                            }
+
+                                            StyledText {
+                                                text: "KDE'ye Tanımla & Eşitle"
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                color: syncMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: syncMouseArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                Config.applyKdeShortcuts();
+                                                root.shortcutSyncSuccess = true;
+                                                shortcutSyncTimer.restart();
+                                            }
+                                        }
+                                    }
+
+                                    // Button 2: KDE'de Aç
+                                    Rectangle {
+                                        Layout.preferredWidth: 110
+                                        Layout.preferredHeight: 32
+                                        radius: 6
+                                        color: kcmMouseArea.containsMouse ? Theme.surfaceHigh : Theme.surface
+                                        border.width: 1
+                                        border.color: Theme.outline
 
                                         RowLayout {
                                             anchors.centerIn: parent
@@ -967,14 +1045,14 @@ FloatingWindow {
                                             Icon {
                                                 name: "preferences-system"
                                                 size: 14
-                                                color: kcmMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                                color: Theme.text
                                             }
 
                                             StyledText {
-                                                text: "KDE'de Düzenle"
-                                                font.pixelSize: 12
+                                                text: "KDE'de Aç"
+                                                font.pixelSize: 11
                                                 font.bold: true
-                                                color: kcmMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                                color: Theme.text
                                             }
                                         }
 
@@ -989,6 +1067,35 @@ FloatingWindow {
                                         }
                                     }
                                 }
+
+                                // Sync feedback notification
+                                Rectangle {
+                                    visible: root.shortcutSyncSuccess
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 30
+                                    radius: 6
+                                    color: Theme.primary
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 12
+                                        spacing: 8
+
+                                        Icon {
+                                            name: "check"
+                                            size: 14
+                                            color: Theme.textOnPrimary
+                                        }
+
+                                        StyledText {
+                                            text: "Kısayollar KDE Plasma'ya (kglobalshortcutsrc) başarıyla yazıldı ve etkinleştirildi!"
+                                            font.pixelSize: 11
+                                            font.bold: true
+                                            color: Theme.textOnPrimary
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -996,27 +1103,31 @@ FloatingWindow {
                         Repeater {
                             model: [
                                 {
+                                    action: "Region",
                                     title: "Bölge Seçimi ve Yakalama",
                                     desc: "Ekranı dondurur; kılavuzlar ve araç çubuğu ile özel alan kırpmanızı sağlar.",
-                                    key: "Print",
+                                    defaultKey: "Print",
                                     icon: "screenshot"
                                 },
                                 {
+                                    action: "Window",
                                     title: "Aktif Pencereyi Yakala",
                                     desc: "Odaklanılmış olan pencereyi pencere dekorasyonları ve gölgesiyle doğrudan çeker.",
-                                    key: "Meta + Print",
+                                    defaultKey: "Meta + Print",
                                     icon: "desktop_windows"
                                 },
                                 {
+                                    action: "FullScreen",
                                     title: "Tüm Ekranı Yakala",
                                     desc: "Bağlı tüm monitörlerin görüntüsünü tek karede anında yakalar.",
-                                    key: "Shift + Print",
+                                    defaultKey: "Shift + Print",
                                     icon: "fullscreen"
                                 },
                                 {
+                                    action: "Settings",
                                     title: "Omnisnap Ayarlarını Aç",
                                     desc: "Çözünürlük, kayıt, arayüz ve kısayol ayarlarının yönetildiği bu pencereyi açar.",
-                                    key: "Meta + Shift + Print",
+                                    defaultKey: "Meta + Shift + Print",
                                     icon: "settings"
                                 }
                             ]
@@ -1063,22 +1174,64 @@ FloatingWindow {
                                         }
                                     }
 
-                                    // Key Combination Badge
-                                    Rectangle {
-                                        Layout.preferredHeight: 30
-                                        Layout.preferredWidth: keyText.implicitWidth + 20
-                                        radius: 6
-                                        color: Theme.surfaceHigh
-                                        border.width: 1
-                                        border.color: Theme.outline
+                                    // Editable Key Combination Field + Apply Button
+                                    RowLayout {
+                                        spacing: 6
 
-                                        StyledText {
-                                            id: keyText
-                                            anchors.centerIn: parent
-                                            text: shortcutItem.modelData.key
-                                            font.bold: true
+                                        TextField {
+                                            id: keyField
+                                            Layout.preferredWidth: 140
+                                            Layout.preferredHeight: 32
+                                            text: root.getShortcutKey(shortcutItem.modelData.action)
+                                            color: Theme.text
                                             font.pixelSize: 12
-                                            color: Theme.primary
+                                            font.bold: true
+                                            leftPadding: 8
+                                            rightPadding: 8
+                                            placeholderText: shortcutItem.modelData.defaultKey
+                                            placeholderTextColor: Theme.textMuted
+
+                                            background: Rectangle {
+                                                color: Theme.background
+                                                radius: 6
+                                                border.width: 1
+                                                border.color: keyField.activeFocus ? Theme.primary : Theme.outline
+                                            }
+
+                                            onAccepted: {
+                                                if (text.trim() !== "") {
+                                                    root.setShortcutKey(shortcutItem.modelData.action, text.trim());
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            Layout.preferredWidth: 64
+                                            Layout.preferredHeight: 32
+                                            radius: 6
+                                            color: applyKeyMouse.containsMouse ? Theme.primary : Theme.surfaceHigh
+                                            border.width: 1
+                                            border.color: Theme.outline
+
+                                            StyledText {
+                                                anchors.centerIn: parent
+                                                text: "Uygula"
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                color: applyKeyMouse.containsMouse ? Theme.textOnPrimary : Theme.text
+                                            }
+
+                                            MouseArea {
+                                                id: applyKeyMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (keyField.text.trim() !== "") {
+                                                        root.setShortcutKey(shortcutItem.modelData.action, keyField.text.trim());
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

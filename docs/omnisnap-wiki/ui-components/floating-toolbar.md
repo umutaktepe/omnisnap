@@ -50,6 +50,7 @@ Bu yerleşim, farenin araç çubuğu üzerindeki düğmelere tıklamasını ve s
 3. **Yakalama Modu Düğmesi ve Açılır Menü (`fsBtn` & `captureModeMenu`)**:
    - `icon: "fullscreen"`
    - `onClicked: root.modeMenuOpen = !root.modeMenuOpen`
+   - Popover koordinat yerleşimi: `captureModeMenu`, nested `RowLayout` koordinat sapmalarını önlemek amacıyla doğrudan `fsBtn` düğmesinin alt elemanı (child) olarak tanımlanmıştır. `anchors.horizontalCenter: parent.horizontalCenter` ve `anchors.bottom: parent.top` ile butonun tam üst merkezine milimetrik olarak kilitlenir.
    - Düğmeye tıklandığında hemen yukarısında zarif bir açılır menü (popover) açılır:
      - 🖥️ **Tüm Ekran (Full Screen)**: Tıklandığında ekranın tamamını kırpma boru hattına gönderir.
      - 🪟 **Aktif Pencere (Active Window)**: Tıklandığında arayüzü kapatıp KWin kenarlarını geri yükler ve o an odaklanılmış pencereyi doğrudan yakalar.

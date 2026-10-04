@@ -22,7 +22,26 @@ QtObject {
     property string ocrLanguages: ""           // "" = auto-detect all
     property bool shutterSound: false
 
+    // Shortcut Properties with defaults
+    property string shortcutRegion: "Print"
+    property string shortcutWindow: "Meta+Print"
+    property string shortcutFullScreen: "Shift+Print"
+    property string shortcutSettings: "Meta+Shift+Print"
+
     property bool loaded: false
+
+    function shortcutsBin() {
+        const base = Quickshell.shellDir || ".";
+        return base + "/bin/omnisnap-shortcuts";
+    }
+
+    function applyKdeShortcuts() {
+        Quickshell.execDetached([root.shortcutsBin(), "apply-defaults"]);
+    }
+
+    function setKdeShortcut(action, key) {
+        Quickshell.execDetached([root.shortcutsBin(), "set", action, key]);
+    }
 
     function toJsonString() {
         const obj = {
@@ -36,7 +55,11 @@ QtObject {
             "inhibitScreenEdges": root.inhibitScreenEdges,
             "defaultAction": root.defaultAction,
             "ocrLanguages": root.ocrLanguages,
-            "shutterSound": root.shutterSound
+            "shutterSound": root.shutterSound,
+            "shortcutRegion": root.shortcutRegion,
+            "shortcutWindow": root.shortcutWindow,
+            "shortcutFullScreen": root.shortcutFullScreen,
+            "shortcutSettings": root.shortcutSettings
         };
         return JSON.stringify(obj, null, 2);
     }
@@ -56,6 +79,10 @@ QtObject {
             if (data.defaultAction !== undefined) root.defaultAction = data.defaultAction;
             if (data.ocrLanguages !== undefined) root.ocrLanguages = data.ocrLanguages;
             if (data.shutterSound !== undefined) root.shutterSound = data.shutterSound;
+            if (data.shortcutRegion !== undefined) root.shortcutRegion = data.shortcutRegion;
+            if (data.shortcutWindow !== undefined) root.shortcutWindow = data.shortcutWindow;
+            if (data.shortcutFullScreen !== undefined) root.shortcutFullScreen = data.shortcutFullScreen;
+            if (data.shortcutSettings !== undefined) root.shortcutSettings = data.shortcutSettings;
         } catch (e) {
             console.warn("[Omnisnap Config] Failed to parse config.json:", e);
         }
@@ -92,5 +119,6 @@ QtObject {
 
     Component.onCompleted: {
         root.load();
+        Quickshell.execDetached([root.shortcutsBin(), "install-desktop"]);
     }
 }

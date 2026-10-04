@@ -85,3 +85,13 @@ Format standardı:
   - Catppuccin Mocha / Breeze Dark uyumlu `Theme.qml` ve atomik UI bileşenleri.
   - CLI başlatıcısı `bin/omnisnap` ve `install.sh` kurulum otomasyonu.
 - **İlgili Sayfalar**: [[system-overview]], [[action-orchestration]], [[design-system]], [[cli-interface]], [[installation-and-packaging]].
+
+## [2026-10-05] fix | UI Oranları, Popover Koordinat Hizalaması ve Uygulama İçi Kısayol Senkronizasyonu
+- **Kapsam**: Ekran seçim araç çubuğundaki popover hizalama hatasının, ayarlar penceresindeki sekme taşmalarının ve harici KDE bağımlılığı olmadan doğrudan uygulama içinden kısayol yönetimi ihtiyacının çözülmesi.
+- **Bileşenler**:
+  - `OptionsToolbar.qml`: `captureModeMenu` popover menüsü doğrudan `fsBtn` içine taşınarak `anchors.horizontalCenter: parent.horizontalCenter` ile sol sapma giderildi.
+  - `SettingsWindow.qml`: Pencere boyutları `740x560` (asgari `680x500`) olarak güncellendi; sekmeler yatay `Flickable` içine alınarak taşma önlendi.
+  - `bin/omnisnap-shortcuts`: KDE Plasma 6 `kwriteconfig6` ve `kreadconfig6` araçlarıyla `kglobalshortcutsrc` ve `.desktop` dosyalarını arka planda sessizce senkronize eden bağımsız CLI motoru geliştirildi.
+  - `modules/config/Config.qml`: `shortcutRegion`, `shortcutWindow`, `shortcutFullScreen`, `shortcutSettings` yapılandırma alanları, otomatik desktop kurulumu ve `applyKdeShortcuts()` / `setKdeShortcut()` entegrasyonu eklendi.
+  - `tests/test_shortcuts.sh`: Kısayol motorunu, `.desktop` kurulumunu ve `kglobalshortcutsrc` yazma/okuma işlevlerini test eden yeni test süiti eklendi.
+- **İlgili Sayfalar**: [[floating-toolbar]], [[settings-and-configuration]], [[desktop-and-shortcuts]], [[cli-interface]], [[installation-and-packaging]].

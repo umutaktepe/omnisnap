@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+BIN_DIR="${OMNISNAP_BIN_TARGET:-$HOME/.local/bin}"
+DESKTOP_DIR="${OMNISNAP_DESKTOP_TARGET:-$HOME/.local/share/applications}"
+KCONFIG_FILE="${OMNISNAP_TEST_KCONFIG:-$HOME/.config/kglobalshortcutsrc}"
+
+_write_kconfig() {
+    local group1="$1"
+    local group2="$2"
+    local key="$3"
+    local value="$4"
+    local notify="${5:-false}"
+
+    if command -v kwriteconfig6 >/dev/null 2>&1; then
+        local notify_flag=""
+        if [ "$notify" = "true" ]; then
+            notify_flag="--notify"
+        fi
+        if [ -n "$notify_flag" ]; then
+            kwriteconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" "$value" "$notify_flag" 2>/dev/null || true
+        else
+            kwriteconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" "$value" 2>/dev/null || true
+        fi
+    else
+        # Fallback INI writer if kwriteconfig6 is absent
+        python3 -c "
+import configparser, sys
+cfg = configparser.RawConfigParser()
+cfg.read('$KCONFIG_FILE')
+group = f'$group1][$group2'
+if not cfg.has_section(group):
+    cfg.add_section(group)
+cfg.set(group, sys.argv[1], sys.argv[2])
+with open('$KCONFIG_FILE', 'w') as f:
+    cfg.write(f)
+" "$key" "$value" 2>/dev/null || true
+    fi
+}
+
+_read_kconfig() {
+    local group1="$1"
+    local group2="$2"
+    local key="$3"
+
+    if command -v kreadconfig6 >/dev/null 2>&1; then
+        kreadconfig6 --file "$KCONFIG_FILE" --group "$group1" --group "$group2" --key "$key" 2>/dev/null || true
+    else
+        python3 -c "
+import configparser, sys
+cfg = configparser.RawConfigParser()
+cfg.read('$KCONFIG_FILE')
+group = f'$group1][$group2'
+if cfg.has_section(group) and cfg.has_option(group, sys.argv[1]):
+    print(cfg.get(group, sys.argv[1]))
+" "$key" 2>/dev/null || true
+    fi
+}
+
+install_desktop() {
+    mkdir -p "$DESKTOP_DIR" 2>/dev/null || true
+    mkdir -p "$BIN_DIR" 2>/dev/null || true
+    local exec_bin="$BIN_DIR/omnisnap"
+    if [ ! -x "$exec_bin" ]; then
+        exec_bin="$PROJECT_DIR/bin/omnisnap"
+    fi
+
+    if [ -d "$DESKTOP_DIR" ]; then
+        sed "s|Exec=omnisnap|Exec=$exec_bin|g" "$PROJECT_DIR/omnisnap.desktop" > "$DESKTOP_DIR/omnisnap.desktop" 2>/dev/null || true
+        chmod +x "$DESKTOP_DIR/omnisnap.desktop" 2>/dev/null || true
+        update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
+        echo "Desktop entry installed to $DESKTOP_DIR/omnisnap.desktop"
+    fi
+}
+
+apply_defaults() {
+    install_desktop
+
+    # Register Omnisnap Desktop Actions in KDE KGlobalAccel
+    _write_kconfig "services" "omnisnap.desktop" "_k_friendly_name" "Omnisnap" false
+    _write_kconfig "services" "omnisnap.desktop" "Region" "Print,Print,Capture Rectangular Region" false
+    _write_kconfig "services" "omnisnap.desktop" "Window" "Meta+Print,Meta+Print,Capture Active Window" false
+    _write_kconfig "services" "omnisnap.desktop" "FullScreen" "Shift+Print,Shift+Print,Capture Entire Desktop" false
+    _write_kconfig "services" "omnisnap.desktop" "Settings" "Meta+Shift+Print,Meta+Shift+Print,Omnisnap Settings" false
+    _write_kconfig "services" "omnisnap.desktop" "_launch" "none" true
+
+    # Unbind conflicting Spectacle defaults so Omnisnap takes priority
+    _write_kconfig "services" "org.kde.spectacle.desktop" "RectangularRegionScreenShot" "none" false
+    _write_kconfig "services" "org.kde.spectacle.desktop" "ActiveWindowScreenShot" "none" false
+    _write_kconfig "services" "org.kde.spectacle.desktop" "FullScreenScreenShot" "none" true
+
+    echo "KDE global shortcuts successfully configured for Omnisnap."
+}
+
+set_shortcut() {
+    local raw_action="$1"
+    local action="$raw_action"
+    case "$raw_action" in
+        region|Region) action="Region" ;;
+        window|Window) action="Window" ;;
+        fullscreen|FullScreen|Fullscreen) action="FullScreen" ;;
+        settings|Settings) action="Settings" ;;
+    esac
+
+    local key="$2"
+    install_desktop
+
+    local desc="Omnisnap $action"
+    if [ "$action" = "Region" ]; then desc="Capture Rectangular Region"; fi
+    if [ "$action" = "Window" ]; then desc="Capture Active Window"; fi
+    if [ "$action" = "FullScreen" ]; then desc="Capture Entire Desktop"; fi
+    if [ "$action" = "Settings" ]; then desc="Omnisnap Settings"; fi
+
+    _write_kconfig "services" "omnisnap.desktop" "$action" "$key,$key,$desc" true
+    echo "Shortcut for $action set to $key"
+}
+
+get_shortcut() {
+    local raw_action="$1"
+    local action="$raw_action"
+    case "$raw_action" in
+        region|Region) action="Region" ;;
+        window|Window) action="Window" ;;
+        fullscreen|FullScreen|Fullscreen) action="FullScreen" ;;
+        settings|Settings) action="Settings" ;;
+    esac
+
+    local raw
+    raw="$(_read_kconfig "services" "omnisnap.desktop" "$action")"
+    if [ -z "$raw" ] || [ "$raw" = "none" ]; then
+        case "$action" in
+            Region) echo "Print" ;;
+            Window) echo "Meta+Print" ;;
+            FullScreen) echo "Shift+Print" ;;
+            Settings) echo "Meta+Shift+Print" ;;
+            *) echo "none" ;;
+        esac
+    else
+        echo "$raw" | awk -F',' '{print $1}' | tr -d '\t'
+    fi
+}
+
+status_shortcuts() {
+    echo "Omnisnap KDE Global Shortcuts Status:"
+    echo "  Region:      $(get_shortcut "Region")"
+    echo "  Window:      $(get_shortcut "Window")"
+    echo "  FullScreen:  $(get_shortcut "FullScreen")"
+    echo "  Settings:    $(get_shortcut "Settings")"
+}
+
+usage() {
+    cat <<EOF
+Omnisnap Shortcut Management Engine
+
+Usage: $(basename "$0") <command> [arguments]
+
+Commands:
+  install-desktop       Install omnisnap.desktop to ~/.local/share/applications
+  apply-defaults        Install desktop entry and apply recommended KDE shortcuts
+  set <action> <key>    Set shortcut for an action (Region, Window, FullScreen, Settings)
+  get <action>          Get configured shortcut for an action
+  status                Display current shortcuts status
+  --help, -h            Show this help message
+EOF
+}
+
+case "${1:-}" in
+    install-desktop)
+        install_desktop
+        ;;
+    apply-defaults)
+        apply_defaults
+        ;;
+    set)
+        if [ $# -lt 3 ]; then
+            echo "Error: 'set' requires <action> and <key>" >&2
+            exit 1
+        fi
+        set_shortcut "$2" "$3"
+        ;;
+    get)
+        if [ $# -lt 2 ]; then
+            echo "Error: 'get' requires <action>" >&2
+            exit 1
+        fi
+        get_shortcut "$2"
+        ;;
+    status)
+        status_shortcuts
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac

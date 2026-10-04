@@ -12,9 +12,10 @@ mkdir -p "$BIN_DIR" "$DESKTOP_TARGET"
 echo "Installing Omnisnap to $BIN_DIR..."
 ln -sf "$SCRIPT_DIR/bin/omnisnap" "$BIN_DIR/omnisnap"
 ln -sf "$SCRIPT_DIR/bin/omnisnap-edges" "$BIN_DIR/omnisnap-edges"
+ln -sf "$SCRIPT_DIR/bin/omnisnap-shortcuts" "$BIN_DIR/omnisnap-shortcuts"
 
-echo "Installing Desktop entry to $DESKTOP_TARGET..."
-sed "s|Exec=omnisnap|Exec=$BIN_DIR/omnisnap|g" "$SCRIPT_DIR/omnisnap.desktop" > "$DESKTOP_TARGET/omnisnap.desktop"
+echo "Installing Desktop entry and applying KDE shortcuts..."
+"$SCRIPT_DIR/bin/omnisnap-shortcuts" apply-defaults 2>/dev/null || true
 
 echo "Omnisnap installed successfully!"
-echo "You can now bind 'omnisnap region' to the PrintScreen key in KDE System Settings -> Shortcuts."
+echo "Global shortcuts (Print, Meta+Print, Shift+Print) configured automatically."

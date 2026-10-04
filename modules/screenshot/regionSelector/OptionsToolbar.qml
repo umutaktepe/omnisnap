@@ -83,6 +83,111 @@ Rectangle {
             round: true
             onClicked: root.modeMenuOpen = !root.modeMenuOpen
             Tooltip { target: fsBtn; text: "Capture Full Screen / Active Window" }
+
+            // Capture Mode Popover (Full Screen / Active Window)
+            Rectangle {
+                id: captureModeMenu
+                visible: root.modeMenuOpen
+                opacity: visible ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 120 } }
+
+                anchors {
+                    bottom: parent.top
+                    bottomMargin: 10
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                width: 154
+                height: modeLayout.implicitHeight + 12
+                radius: 12
+                color: Theme.surface
+                border.width: 1
+                border.color: Theme.outline
+                z: 200
+
+                ColumnLayout {
+                    id: modeLayout
+                    anchors.fill: parent
+                    anchors.margins: 6
+                    spacing: 2
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 32
+                        radius: 8
+                        color: fsItemMouse.containsMouse ? Theme.surfaceHigh : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 8
+
+                            Icon {
+                                name: "fullscreen"
+                                size: 16
+                                color: Theme.text
+                            }
+
+                            StyledText {
+                                text: "Tüm Ekran"
+                                font.pixelSize: 12
+                                color: Theme.text
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        MouseArea {
+                            id: fsItemMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.modeMenuOpen = false;
+                                root.fullScreenRequested();
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 32
+                        radius: 8
+                        color: winItemMouse.containsMouse ? Theme.surfaceHigh : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 8
+
+                            Icon {
+                                name: "desktop_windows"
+                                size: 16
+                                color: Theme.text
+                            }
+
+                            StyledText {
+                                text: "Aktif Pencere"
+                                font.pixelSize: 12
+                                color: Theme.text
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        MouseArea {
+                            id: winItemMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.modeMenuOpen = false;
+                                root.activeWindowRequested();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         IconButton {
@@ -105,111 +210,6 @@ Rectangle {
                 root.dismiss();
             }
             Tooltip { target: closeBtn; text: "Cancel (Esc)" }
-        }
-    }
-
-    // Capture Mode Popover (Full Screen / Active Window)
-    Rectangle {
-        id: captureModeMenu
-        visible: root.modeMenuOpen
-        opacity: visible ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 120 } }
-
-        anchors {
-            bottom: parent.top
-            bottomMargin: 10
-            horizontalCenter: fsBtn.horizontalCenter
-        }
-
-        width: 154
-        height: modeLayout.implicitHeight + 12
-        radius: 12
-        color: Theme.surface
-        border.width: 1
-        border.color: Theme.outline
-        z: 200
-
-        ColumnLayout {
-            id: modeLayout
-            anchors.fill: parent
-            anchors.margins: 6
-            spacing: 2
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 32
-                radius: 8
-                color: fsItemMouse.containsMouse ? Theme.surfaceHigh : "transparent"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    spacing: 8
-
-                    Icon {
-                        name: "fullscreen"
-                        size: 16
-                        color: Theme.text
-                    }
-
-                    StyledText {
-                        text: "Tüm Ekran"
-                        font.pixelSize: 12
-                        color: Theme.text
-                        Layout.fillWidth: true
-                    }
-                }
-
-                MouseArea {
-                    id: fsItemMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        root.modeMenuOpen = false;
-                        root.fullScreenRequested();
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 32
-                radius: 8
-                color: winItemMouse.containsMouse ? Theme.surfaceHigh : "transparent"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    spacing: 8
-
-                    Icon {
-                        name: "desktop_windows"
-                        size: 16
-                        color: Theme.text
-                    }
-
-                    StyledText {
-                        text: "Aktif Pencere"
-                        font.pixelSize: 12
-                        color: Theme.text
-                        Layout.fillWidth: true
-                    }
-                }
-
-                MouseArea {
-                    id: winItemMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        root.modeMenuOpen = false;
-                        root.activeWindowRequested();
-                    }
-                }
-            }
         }
     }
 }

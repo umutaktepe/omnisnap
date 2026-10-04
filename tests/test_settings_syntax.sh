@@ -48,8 +48,11 @@ test_settings_structure() {
     grep -q "kcmshell6" "$SETTINGS_QML" || { echo "FAIL: Missing kcmshell6 KDE shortcut trigger"; exit 1; }
     grep -q "Meta + Print" "$SETTINGS_QML" || { echo "FAIL: Missing Meta + Print active window shortcut"; exit 1; }
     grep -q "Shift + Print" "$SETTINGS_QML" || { echo "FAIL: Missing Shift + Print fullscreen shortcut"; exit 1; }
+    grep -q "applyKdeShortcuts" "$SETTINGS_QML" || { echo "FAIL: Missing applyKdeShortcuts call"; exit 1; }
+    grep -q "setShortcutKey" "$SETTINGS_QML" || { echo "FAIL: Missing setShortcutKey implementation"; exit 1; }
+    grep -q "shortcutSyncSuccess" "$SETTINGS_QML" || { echo "FAIL: Missing shortcutSyncSuccess notification"; exit 1; }
 
-    echo "PASS: SettingsWindow structure and configuration bindings verified"
+    echo "PASS: SettingsWindow structure, configuration bindings, and shortcut sync verified"
 }
 
 test_qmllint_syntax() {

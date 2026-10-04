@@ -53,13 +53,31 @@ KDE Plasma 6, `.desktop` dosyasındaki eylemleri (Desktop Actions) doğrudan Kı
 | **Omnisnap Metin Okuma (OCR)** | `omnisnap ocr` | `Meta + Shift + T` | Tesseract ile panoya metin kopyalama |
 | **Omnisnap Görsel Arama** | `omnisnap search` | `Meta + Shift + L` | Google Lens ile görsel arama |
 
-## KWin Spectacle Kısayollarının Değiştirilmesi
-KDE Plasma 6'da varsayılan olarak `Print` tuşu Spectacle GUI'sine atanmıştır. Omnisnap'i birincil ekran aracı yapmak için:
-1. Shortcuts menüsünde `Spectacle` aratılır.
-2. "Bölge Yakala" ve "Tam Ekran Yakala" varsayılan kısayolları kaldırılır veya değiştirilir.
-3. `omnisnap region` komutuna `Print` tuşu atanır.
+## Otomatik Kısayol Senkronizasyonu: `bin/omnisnap-shortcuts`
+
+Omnisnap, kullanıcının KDE Sistem Ayarları (`kcmshell6 kcm_keys`) ile uğraşmasına gerek kalmadan kısayolları doğrudan arka planda yapılandırmasını sağlayan `bin/omnisnap-shortcuts` CLI motoruna sahiptir:
+
+```bash
+omnisnap-shortcuts <komut> [argümanlar]
+```
+
+### Alt Komutlar:
+1. `install-desktop`: `omnisnap.desktop` dosyasını `~/.local/share/applications/` altına kurar ve `update-desktop-database` çalıştırır.
+2. `apply-defaults`:
+   - `~/.config/kglobalshortcutsrc` dosyasına `[services][omnisnap.desktop]` grubu altında önerilen tüm kısayolları yazar.
+   - Çakışan varsayılan Spectacle kısayollarını (`RectangularRegionScreenShot`, `ActiveWindowScreenShot`, `FullScreenScreenShot`) devre dışı bırakır (`none`).
+   - `kwriteconfig6 --notify` ile KDE Plasma oturumunu anında bilgilendirir (yeniden başlatma gerekmez).
+3. `set <action> <key>`: Tek bir eylem için (Region, Window, FullScreen, Settings) kısayolu anında günceller.
+4. `get <action>`: İlgili eylemin mevcut kısayolunu sorgular.
+5. `status`: Tanımlı tüm kısayolların durumunu listeler.
+
+### Uygulama İçi (In-App) Ayarlar Entegrasyonu
+Kullanıcı `SettingsWindow.qml` içerisindeki "Klavye Kısayolları" sekmesini açtığında:
+- "KDE'ye Tanımla & Eşitle" butonuna basarak tüm varsayılanları tek tıkla arka planda sisteme tanıtabilir.
+- Her eylemin tuş kombinasyonunu metin kutusundan doğrudan değiştirip "Uygula" butonuna basarak anında KDE'ye işletilebilir.
 
 ## İlişkili Dokümanlar
 - Komut satırı kullanımı: [[cli-interface]]
+- Ayarlar ve Yapılandırma: [[settings-and-configuration]]
 - Kurulum otomasyonu: [[installation-and-packaging]]
 - Yaşam döngüleri: [[execution-lifecycles]]
