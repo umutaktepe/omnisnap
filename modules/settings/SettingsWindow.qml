@@ -24,6 +24,7 @@ FloatingWindow {
 
     function show() {
         root.visible = true;
+        container.forceActiveFocus();
     }
 
     function hide() {
@@ -33,7 +34,7 @@ FloatingWindow {
     function close() {
         root.visible = false;
         if (root.isStandalone && !Quickshell.env("OMNISNAP_DAEMON")) {
-            Qt.quit();
+            Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`]);
         }
     }
 
@@ -42,8 +43,6 @@ FloatingWindow {
         interval: 2500
         onTriggered: root.saveSuccess = false
     }
-
-    Keys.onEscapePressed: root.close()
 
     Item {
         id: container

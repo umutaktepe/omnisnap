@@ -10,6 +10,14 @@ Format standardı:
 
 ---
 
+## [2026-10-05] [fix] | Eliminate QML Runtime Keys and QQmlEngine::quit Warnings
+- **Kapsam**: `SettingsWindow.qml` başlatıldığında oluşan geçersiz `Keys` iliştirme uyarısı ve süreç kapanışlarında dinleyicisi olmayan `QQmlEngine::quit()` sinyal uyarısının giderilmesi.
+- **Çözüm**:
+  - `SettingsWindow.qml` kökündeki `FloatingWindow` (bir `Item` olmadığı için `Keys` desteklemeyen) üzerinden `Keys.onEscapePressed` kaldırıldı; odaklı iç `Item` (`container`) ile `Escape` yakalama korundu ve `show()` fonksiyonuna `container.forceActiveFocus()` eklendi.
+  - Quickshell'in C++ katmanında dinleyicisi bulunmayan `Qt.quit()` çağrıları (`SettingsWindow.qml`, `shell.qml` ve `RegionSelector.qml`), Quickshell'in yerleşik temiz çıkış mekanizması olan `Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`])` ile değiştirildi.
+  - `test_quickshell_syntax.sh` regresyon testi güncellendi ve 11 test takımının tamamı başarıyla doğrulandı.
+- **İlgili Sayfalar**: [[settings-and-configuration]], [[system-overview]], [[selection-mechanics]].
+
 ## [2026-10-05] [feat] | Active Window Capture and Meta+Print Integration
 - **Kapsam**: Spectacle'ın yerleşik aktif pencere yakalama motorunun (`spectacle -b -n -a`) Omnisnap mimarisine entegrasyonu ve `Meta+Print` kısayol desteği.
 - **Çözüm**:

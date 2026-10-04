@@ -74,7 +74,7 @@ test_region_selector_structure() {
     grep -q 'function dismiss()' "$REGION_SELECTOR_FILE" || { echo "FAIL: Missing dismiss() function"; exit 1; }
     grep -q 'root.active = false' "$REGION_SELECTOR_FILE" || { echo "FAIL: dismiss() must deactivate root.active"; exit 1; }
     grep -q 'OMNISNAP_DAEMON' "$REGION_SELECTOR_FILE" || { echo "FAIL: Missing OMNISNAP_DAEMON check in dismiss()"; exit 1; }
-    grep -q 'Qt.quit()' "$REGION_SELECTOR_FILE" || { echo "FAIL: Missing Qt.quit() in dismiss()"; exit 1; }
+    grep -q 'Quickshell.processId' "$REGION_SELECTOR_FILE" || { echo "FAIL: Missing Quickshell.processId in dismiss()"; exit 1; }
 
     grep -q 'function screenshot()' "$REGION_SELECTOR_FILE" || { echo "FAIL: Missing screenshot() function"; exit 1; }
     grep -q 'root.action = ScreenshotAction.SnipAction.Copy' "$REGION_SELECTOR_FILE" || { echo "FAIL: screenshot() must set Copy action"; exit 1; }

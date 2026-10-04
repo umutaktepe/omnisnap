@@ -62,7 +62,7 @@ ShellRoot {
 
         Quickshell.execDetached(["bash", "-c", script]);
         if (Quickshell.env("OMNISNAP_DAEMON") !== "1" && Quickshell.env("OMNISNAP_INITIAL_ACTION") !== "") {
-            Qt.quit();
+            Quickshell.execDetached(["kill", "-TERM", `${Quickshell.processId}`]);
         }
     }
 
