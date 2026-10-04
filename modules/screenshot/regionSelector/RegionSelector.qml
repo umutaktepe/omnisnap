@@ -9,6 +9,7 @@ Scope {
     property bool active: false
     property var action: ScreenshotAction.SnipAction.Copy
     signal openSettingsRequested()
+    signal activeWindowRequested()
 
     function edgesBin() {
         const base = Quickshell.shellDir || ".";
@@ -31,6 +32,12 @@ Scope {
         Quickshell.execDetached([edgesBin(), "restore"]);
         root.active = false;
         root.openSettingsRequested();
+    }
+
+    function captureActiveWindow() {
+        Quickshell.execDetached([edgesBin(), "restore"]);
+        root.active = false;
+        root.activeWindowRequested();
     }
 
     function screenshot() {
@@ -68,6 +75,7 @@ Scope {
                 screen: loader.modelData
                 action: root.action
                 onDismiss: root.dismiss()
+                onActiveWindowRequested: root.captureActiveWindow()
                 onOpenSettingsRequested: root.openSettings()
             }
         }

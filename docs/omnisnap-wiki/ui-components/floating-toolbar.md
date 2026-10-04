@@ -47,12 +47,20 @@ Bu yerleşim, farenin araç çubuğu üzerindeki düğmelere tıklamasını ve s
 2. **Dikey Ayırıcı (Divider)**:
    - Sekmeler ile bağımsız butonlar arasında 1 piksel genişliğinde `Theme.outline` çizgisidir.
 
-3. **Tam Ekran Düğmesi (`fsBtn`)**:
+3. **Yakalama Modu Düğmesi ve Açılır Menü (`fsBtn` & `captureModeMenu`)**:
    - `icon: "fullscreen"`
-   - `onClicked: root.fullScreenRequested()`
-   - Tıklandığında sürükleme koordinatları yerine ekranın tüm çözünürlüğünü (`0, 0, screen.width, screen.height`) kırpma boru hattına gönderir.
+   - `onClicked: root.modeMenuOpen = !root.modeMenuOpen`
+   - Düğmeye tıklandığında hemen yukarısında zarif bir açılır menü (popover) açılır:
+     - 🖥️ **Tüm Ekran (Full Screen)**: Tıklandığında ekranın tamamını kırpma boru hattına gönderir.
+     - 🪟 **Aktif Pencere (Active Window)**: Tıklandığında arayüzü kapatıp KWin kenarlarını geri yükler ve o an odaklanılmış pencereyi doğrudan yakalar.
+   - Dışarıya tıklandığında veya Esc tuşuna basıldığında açılır menü otomatik olarak kapanır.
 
-4. **Kapatma / İptal Düğmesi (`closeBtn`)**:
+4. **Ayarlar Düğmesi (`settingsBtn`)**:
+   - `icon: "settings"`
+   - `onClicked: root.openSettingsRequested()`
+   - Tıklandığında geçici dondurulmuş ekranları temizleyip bağımsız `SettingsWindow.qml` penceresini açar.
+
+5. **Kapatma / İptal Düğmesi (`closeBtn`)**:
    - `icon: "close"`
    - `onClicked: root.dismiss()`
    - Klavyedeki Esc tuşuyla aynı görevi görerek arayüzü kapatır ve geçici dosyaları temizler.

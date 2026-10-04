@@ -57,7 +57,15 @@ PanelWindow {
         }
     }
 
+    signal activeWindowRequested()
+
     onDismiss: {
+        if (!root.snipExecuted && proc.screenshotPath) {
+            Quickshell.execDetached(["rm", "-f", proc.screenshotPath]);
+        }
+    }
+
+    onActiveWindowRequested: {
         if (!root.snipExecuted && proc.screenshotPath) {
             Quickshell.execDetached(["rm", "-f", proc.screenshotPath]);
         }
@@ -110,7 +118,13 @@ PanelWindow {
     // Escape listener
     Shortcut {
         sequence: "Escape"
-        onActivated: root.dismiss()
+        onActivated: {
+            if (optionsToolbar.modeMenuOpen) {
+                optionsToolbar.modeMenuOpen = false;
+                return;
+            }
+            root.dismiss();
+        }
     }
 
     // Background frozen frame
@@ -131,10 +145,17 @@ PanelWindow {
 
         Keys.onEscapePressed: event => {
             event.accepted = true;
+            if (optionsToolbar.modeMenuOpen) {
+                optionsToolbar.modeMenuOpen = false;
+                return;
+            }
             root.dismiss();
         }
 
         onPressed: mouse => {
+            if (optionsToolbar.modeMenuOpen) {
+                optionsToolbar.modeMenuOpen = false;
+            }
             root.mouseButton = mouse.button;
             root.dragStartX = mouse.x;
             root.dragStartY = mouse.y;
@@ -197,6 +218,9 @@ PanelWindow {
         onDismiss: root.dismiss()
         onFullScreenRequested: {
             root.snip(true);
+        }
+        onActiveWindowRequested: {
+            root.activeWindowRequested();
         }
         onOpenSettingsRequested: {
             root.openSettingsRequested();

@@ -40,6 +40,8 @@ IconImage {
                 return "video-display";
             case "settings":
                 return "preferences-system";
+            case "keyboard":
+                return "input-keyboard";
             default:
                 return iconName;
         }

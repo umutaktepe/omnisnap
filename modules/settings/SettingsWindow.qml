@@ -134,6 +134,7 @@ FloatingWindow {
                             { name: "Görüntü ve Çözünürlük", icon: "insert-image" },
                             { name: "Kayıt ve Pano", icon: "document-save" },
                             { name: "Arayüz ve Seçim", icon: "preferences-system" },
+                            { name: "Klavye Kısayolları", icon: "keyboard" },
                             { name: "OCR ve Metin", icon: "draw-text" }
                         ]
 
@@ -900,7 +901,193 @@ FloatingWindow {
                     }
                 }
 
-                // --------- TAB 3: OCR ve Metin ---------
+                // --------- TAB 3: Klavye Kısayolları ---------
+                ScrollView {
+                    contentWidth: availableWidth
+                    clip: true
+
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: 12
+                        anchors.margins: 16
+
+                        // KDE Plasma Shortcuts Integration Header Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: kcmCol.implicitHeight + 24
+                            color: Theme.surface
+                            radius: 8
+                            border.width: 1
+                            border.color: Theme.outline
+
+                            ColumnLayout {
+                                id: kcmCol
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 10
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 12
+
+                                    Icon {
+                                        name: "keyboard"
+                                        size: 24
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: "KDE Plasma 6 Klavye Kısayolları"
+                                            font.bold: true
+                                            font.pixelSize: 13
+                                            color: Theme.text
+                                        }
+
+                                        StyledText {
+                                            text: "Wayland ortamında küresel tuş kombinasyonları KDE KGlobalAccel mimarisiyle yönetilir."
+                                            font.pixelSize: 11
+                                            color: Theme.textMuted
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 140
+                                        Layout.preferredHeight: 32
+                                        radius: 6
+                                        color: kcmMouseArea.containsMouse ? Theme.surfaceHigh : Theme.primary
+
+                                        RowLayout {
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            Icon {
+                                                name: "preferences-system"
+                                                size: 14
+                                                color: kcmMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                            }
+
+                                            StyledText {
+                                                text: "KDE'de Düzenle"
+                                                font.pixelSize: 12
+                                                font.bold: true
+                                                color: kcmMouseArea.containsMouse ? Theme.text : Theme.textOnPrimary
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: kcmMouseArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                Quickshell.execDetached(["kcmshell6", "kcm_keys"]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Shortcut List Cards
+                        Repeater {
+                            model: [
+                                {
+                                    title: "Bölge Seçimi ve Yakalama",
+                                    desc: "Ekranı dondurur; kılavuzlar ve araç çubuğu ile özel alan kırpmanızı sağlar.",
+                                    key: "Print",
+                                    icon: "screenshot"
+                                },
+                                {
+                                    title: "Aktif Pencereyi Yakala",
+                                    desc: "Odaklanılmış olan pencereyi pencere dekorasyonları ve gölgesiyle doğrudan çeker.",
+                                    key: "Meta + Print",
+                                    icon: "desktop_windows"
+                                },
+                                {
+                                    title: "Tüm Ekranı Yakala",
+                                    desc: "Bağlı tüm monitörlerin görüntüsünü tek karede anında yakalar.",
+                                    key: "Shift + Print",
+                                    icon: "fullscreen"
+                                },
+                                {
+                                    title: "Omnisnap Ayarlarını Aç",
+                                    desc: "Çözünürlük, kayıt, arayüz ve kısayol ayarlarının yönetildiği bu pencereyi açar.",
+                                    key: "Meta + Shift + Print",
+                                    icon: "settings"
+                                }
+                            ]
+
+                            delegate: Rectangle {
+                                id: shortcutItem
+                                required property var modelData
+                                required property int index
+
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                color: Theme.surface
+                                radius: 8
+                                border.width: 1
+                                border.color: Theme.outline
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 14
+                                    anchors.rightMargin: 14
+                                    spacing: 12
+
+                                    Icon {
+                                        name: shortcutItem.modelData.icon
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: shortcutItem.modelData.title
+                                            font.bold: true
+                                            font.pixelSize: 13
+                                            color: Theme.text
+                                        }
+
+                                        StyledText {
+                                            text: shortcutItem.modelData.desc
+                                            font.pixelSize: 11
+                                            color: Theme.textMuted
+                                        }
+                                    }
+
+                                    // Key Combination Badge
+                                    Rectangle {
+                                        Layout.preferredHeight: 30
+                                        Layout.preferredWidth: keyText.implicitWidth + 20
+                                        radius: 6
+                                        color: Theme.surfaceHigh
+                                        border.width: 1
+                                        border.color: Theme.outline
+
+                                        StyledText {
+                                            id: keyText
+                                            anchors.centerIn: parent
+                                            text: shortcutItem.modelData.key
+                                            font.bold: true
+                                            font.pixelSize: 12
+                                            color: Theme.primary
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // --------- TAB 4: OCR ve Metin ---------
                 ScrollView {
                     contentWidth: availableWidth
                     clip: true

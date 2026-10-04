@@ -137,9 +137,11 @@ Omnisnap, ImageMagick'in şartlı boyutlandırma bayrağını (`>`) kullanarak b
    - Masaüstünde serbestçe sürüklenebilir ve yeniden boyutlandırılabilir.
    - Esc tuşu veya pencere kapatma butonu ile kapatılabilir.
 2. **Sekmeli Gezinme**:
-   - **Genel (General)**: Varsayılan çekim eylemi (Kopyala, Düzenle, Ara, OCR), panoya kopyalama, dosyaya kaydetme anahtarları, görsel kılavuzlar ve KWin kenar engelleme açma/kapama.
-   - **Çözünürlük & Biçim (Resolution & Format)**: Dosya biçimi (`png`, `jpg`, `webp`), görüntü kalitesi kaydırıcısı (slider), maksimum çözünürlük hap butonları (Sınırsız, 4K, 1440p, 1080p, 720p) veya özel geometri girişi.
-   - **Gelişmiş (Advanced)**: Ekran görüntüsü kayıt klasörü yolu seçimi, OCR dilleri, deklanşör sesi ve yapılandırma dosya yolu bilgisi.
+   - **Görüntü ve Çözünürlük**: Dosya biçimi (`png`, `jpg`, `webp`), görüntü kalitesi kaydırıcısı (slider), maksimum çözünürlük hap butonları (Sınırsız, 4K, 1440p, 1080p, 720p) veya özel geometri girişi.
+   - **Kayıt ve Pano**: Ekran görüntüsü kayıt klasörü yolu seçimi, panoya kopyalama ve dosyaya kaydetme anahtarları.
+   - **Arayüz ve Seçim**: Seçim esnasında görsel kılavuzlar (büyüteç, boyut etiketi, artı çizgisi), KWin sıcak kenar engelleme anahtarı ve deklanşör sesi efekti.
+   - **Klavye Kısayolları**: Omnisnap'in tüm yakalama eylemleri için (Bölge Seçimi, Aktif Pencere, Tüm Ekran, Ayarlar) tuş kombinasyonu kartları, `<kbd>` rozetleri ve doğrudan KDE Plasma Kısayol Düzenleyicisini (`kcmshell6 kcm_keys`) açan entegrasyon butonu.
+   - **OCR ve Metin**: Tesseract OCR dil kodları (`tur`, `eng`, `tur+eng`) ve popüler dil hapları.
 3. **Kalıcılık ve Geribildirim**:
    - "Kaydet" butonuna tıklandığında `Config.save()` çağrılır ve 2.5 saniyelik yeşil başarı bilgi çubuğu (`saveSuccess = true`) gösterilir.
    - "Varsayılanlara Sıfırla" butonu tüm ayarları standart fabrika ayarlarına döndürür.

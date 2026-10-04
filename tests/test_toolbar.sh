@@ -72,7 +72,10 @@ test_options_toolbar_properties_and_controls() {
     grep -q 'property var action: ScreenshotAction.SnipAction.Copy' "$TOOLBAR_FILE" || { echo "FAIL: Missing default property var action in OptionsToolbar.qml"; exit 1; }
     grep -q 'signal dismiss()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal dismiss() in OptionsToolbar.qml"; exit 1; }
     grep -q 'signal fullScreenRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal fullScreenRequested() in OptionsToolbar.qml"; exit 1; }
+    grep -q 'signal activeWindowRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal activeWindowRequested() in OptionsToolbar.qml"; exit 1; }
     grep -q 'signal openSettingsRequested()' "$TOOLBAR_FILE" || { echo "FAIL: Missing signal openSettingsRequested() in OptionsToolbar.qml"; exit 1; }
+    grep -q 'captureModeMenu' "$TOOLBAR_FILE" || { echo "FAIL: Missing captureModeMenu popover in OptionsToolbar.qml"; exit 1; }
+    grep -q 'Aktif Pencere' "$TOOLBAR_FILE" || { echo "FAIL: Missing Aktif Pencere option in captureModeMenu"; exit 1; }
 
     # Check pill container styling
     grep -q 'color: Theme.surface' "$TOOLBAR_FILE" || { echo "FAIL: OptionsToolbar.qml missing Theme.surface background"; exit 1; }

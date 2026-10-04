@@ -10,6 +10,16 @@ Format standardı:
 
 ---
 
+## [2026-10-05] [feat] | Active Window Capture Popover and Shortcuts Settings Tab
+- **Kapsam**: Seçim araç çubuğuna açılır yakalama modu menüsü (Tüm Ekran / Aktif Pencere) eklenmesi ve Ayarlar penceresine KDE KGlobalAccel entegrasyonlu Klavye Kısayolları sekmesinin kazandırılması.
+- **Çözüm**:
+  - `OptionsToolbar.qml`: Tam Ekran butonuna tıklandığında yukarı doğru açılan Catppuccin temalı `captureModeMenu` popover menüsü eklendi (`Tüm Ekran` ve `Aktif Pencere` seçenekleri).
+  - `RegionSelection.qml`, `RegionSelector.qml` ve `shell.qml`: `activeWindowRequested` sinyali ve temizlik zinciri bağlanarak aktif pencere seçildiği anda ekran seçim katmanının temizlenmesi ve `captureDirect(true)` ile odaklanılan pencerenin anında çekilmesi sağlandı.
+  - `SettingsWindow.qml`: 5. sekme olarak "Klavye Kısayolları" eklendi; 4 temel eylem (Bölge Seçimi, Aktif Pencere, Tüm Ekran, Ayarlar) için `<kbd>` rozetleri ve doğrudan KDE Sistem Ayarları Kısayollar modülünü açan `kcmshell6 kcm_keys` entegrasyon butonu yerleştirildi.
+  - `Icon.qml`: Klavye (`keyboard` -> `input-keyboard`) simgesi eşlemesi eklendi.
+  - Tüm test süitleri (`test_toolbar.sh`, `test_settings_syntax.sh`, `test_quickshell_syntax.sh`, `run-tests.sh`) güncellendi ve 11/11 başarıyla doğrulandı.
+- **İlgili Sayfalar**: [[floating-toolbar]], [[settings-and-configuration]], [[desktop-and-shortcuts]], [[selection-mechanics]].
+
 ## [2026-10-05] [fix] | Eliminate QML Runtime Keys and QQmlEngine::quit Warnings
 - **Kapsam**: `SettingsWindow.qml` başlatıldığında oluşan geçersiz `Keys` iliştirme uyarısı ve süreç kapanışlarında dinleyicisi olmayan `QQmlEngine::quit()` sinyal uyarısının giderilmesi.
 - **Çözüm**:

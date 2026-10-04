@@ -16,6 +16,9 @@ ShellRoot {
             }
             settingsWindow.show();
         }
+        onActiveWindowRequested: {
+            root.captureDirect(true);
+        }
     }
 
     SettingsWindow {

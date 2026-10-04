@@ -44,6 +44,10 @@ test_settings_structure() {
     grep -q "shutterSound" "$SETTINGS_QML" || { echo "FAIL: Missing shutterSound binding"; exit 1; }
     grep -q "ocrLanguages" "$SETTINGS_QML" || { echo "FAIL: Missing ocrLanguages binding"; exit 1; }
     grep -q "Escape" "$SETTINGS_QML" || { echo "FAIL: Missing Escape key handling"; exit 1; }
+    grep -q "Klavye Kısayolları" "$SETTINGS_QML" || { echo "FAIL: Missing Klavye Kısayolları tab"; exit 1; }
+    grep -q "kcmshell6" "$SETTINGS_QML" || { echo "FAIL: Missing kcmshell6 KDE shortcut trigger"; exit 1; }
+    grep -q "Meta + Print" "$SETTINGS_QML" || { echo "FAIL: Missing Meta + Print active window shortcut"; exit 1; }
+    grep -q "Shift + Print" "$SETTINGS_QML" || { echo "FAIL: Missing Shift + Print fullscreen shortcut"; exit 1; }
 
     echo "PASS: SettingsWindow structure and configuration bindings verified"
 }
